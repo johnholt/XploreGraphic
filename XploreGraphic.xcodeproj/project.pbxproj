@@ -14,6 +14,9 @@
 		7531656C2C66AF9100E2DCBD /* XploreGraphicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7531656B2C66AF9100E2DCBD /* XploreGraphicTests.swift */; };
 		753165762C66AF9100E2DCBD /* XploreGraphicUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */; };
 		753165782C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */; };
+		753836822D18BE4E0041A1F5 /* TagNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */; };
+		7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7581AA4B2D10C9940052A079 /* TagNetwork.swift */; };
+		75C3CE1B2C6808D9006F5571 /* GeneratedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +48,9 @@
 		753165712C66AF9100E2DCBD /* XploreGraphicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XploreGraphicUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITests.swift; sourceTree = "<group>"; };
 		753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetworkTests.swift; sourceTree = "<group>"; };
+		7581AA4B2D10C9940052A079 /* TagNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetwork.swift; sourceTree = "<group>"; };
+		75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,6 +106,8 @@
 				7531655D2C66AF9000E2DCBD /* Assets.xcassets */,
 				7531655F2C66AF9000E2DCBD /* XploreGraphic.entitlements */,
 				753165602C66AF9000E2DCBD /* Preview Content */,
+				75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */,
+				7581AA4B2D10C9940052A079 /* TagNetwork.swift */,
 			);
 			path = XploreGraphic;
 			sourceTree = "<group>";
@@ -115,6 +123,7 @@
 		7531656A2C66AF9100E2DCBD /* XploreGraphicTests */ = {
 			isa = PBXGroup;
 			children = (
+				753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */,
 				7531656B2C66AF9100E2DCBD /* XploreGraphicTests.swift */,
 			);
 			path = XploreGraphicTests;
@@ -193,7 +202,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					753165552C66AF8F00E2DCBD = {
 						CreatedOnToolsVersion = 15.4;
@@ -260,6 +269,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7531655C2C66AF8F00E2DCBD /* ContentView.swift in Sources */,
+				7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */,
+				75C3CE1B2C6808D9006F5571 /* GeneratedData.swift in Sources */,
 				7531655A2C66AF8F00E2DCBD /* XploreGraphicApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -269,6 +280,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7531656C2C66AF9100E2DCBD /* XploreGraphicTests.swift in Sources */,
+				753836822D18BE4E0041A1F5 /* TagNetworkTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,6 +343,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -392,6 +405,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -419,6 +433,7 @@
 				CODE_SIGN_ENTITLEMENTS = XploreGraphic/XploreGraphic.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"XploreGraphic/Preview Content\"";
 				DEVELOPMENT_TEAM = X522X9J38T;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -457,6 +472,7 @@
 				CODE_SIGN_ENTITLEMENTS = XploreGraphic/XploreGraphic.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"XploreGraphic/Preview Content\"";
 				DEVELOPMENT_TEAM = X522X9J38T;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -490,10 +506,10 @@
 		7531657F2C66AF9100E2DCBD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
@@ -513,10 +529,10 @@
 		753165802C66AF9100E2DCBD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
@@ -536,9 +552,9 @@
 		753165822C66AF9100E2DCBD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
@@ -558,9 +574,9 @@
 		753165832C66AF9100E2DCBD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;

@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct XploreGraphicApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
+   @State var genParms = DataParameters()
+   
+   var body: some Scene {
+      WindowGroup {
+         ContentView(genParms: $genParms)
+      }
+   }
 }
+
