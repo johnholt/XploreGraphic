@@ -23,7 +23,15 @@ struct ContentView: View {
    @State private var cardPctTab : [CardinalityProportion] = []
    // Extracted data for display
    @State private var cardCntTab : [CardinalityCount] = []
-   
+   // Graph verions of items assigned topics
+   @State private var graph = UndirectedGraph(nodes: 0)
+   @State private var itemSetJaccardStats = StatsEntry()
+   @State private var tagSetStats = StatsEntry()
+   @State private var pathStats = StatsEntry()
+    // State info for next level of display
+   @State private var distanceType = UndirectedGraph.DistanceType.PathLength
+   @State private var bins : Int = 4
+
    var body: some View {
       NavigationStack {
          VStack {
@@ -99,6 +107,10 @@ struct ContentView: View {
                   }
                }
             }
+            Spacer()
+            HStack {
+               
+            }
             HStack {
                NavigationLink("List of tags") {
                   TagListView(genData: $genData)
@@ -106,12 +118,17 @@ struct ContentView: View {
                NavigationLink("List of items") {
                   ItemListView(genData: $genData)
                }
+               NavigationLink("Tag Graph") {
+                  GraphDataView(graph: $graph, bins: $bins)
+               }
             }
          }
          .padding(5)
          .onAppear(perform: populateState)
       }
+      
    }
+   
    
    func populateState() -> Void {
       maxCard = genParms.pctItemTable.count - 1
@@ -124,6 +141,14 @@ struct ContentView: View {
       genData = GeneratedCollection(parameters: genParms)
       cardCntTab = cvt2CardCntArray(itemsByCard: genData.numItemsByTagsetCard)
       matching = true
+      guard genData.numTags > 0 else { return }
+      graph = UndirectedGraph(nodes: genData.numTags, adjustment: -1)
+      for item in genData.items {
+         graph.add(list: item.tagIdList)
+      }
+      pathStats = graph.distanceStats(typ: .PathLength)
+      tagSetStats = graph.distanceStats(typ: .TagsetJaccard)
+      itemSetJaccardStats = graph.distanceStats(typ: .ItemsetJaccard)
    }
    func applyChanges() -> Void {
       genParms.forceUnusedTags = forceUnusedTags
@@ -135,6 +160,13 @@ struct ContentView: View {
       genData = GeneratedCollection(parameters: genParms)
       cardCntTab = cvt2CardCntArray(itemsByCard: genData.numItemsByTagsetCard)
       matching = true
+      graph = UndirectedGraph(nodes: genParms.numTags, adjustment: -1)
+      for item in genData.items {
+         graph.add(list: item.tagIdList)
+      }
+      pathStats = graph.distanceStats(typ: .PathLength)
+      tagSetStats = graph.distanceStats(typ: .TagsetJaccard)
+      itemSetJaccardStats = graph.distanceStats(typ: .ItemsetJaccard)
    }
    func checkPctTab(tab: [Float], card: Int, pct: Float) -> Void {
       guard card >= 0 && card < tab.count else { return }
@@ -170,45 +202,6 @@ var previewParms = Binding(
    ContentView(genParms: previewParms)
 }
 
-struct TagListView: View {
-   @Binding var genData: GeneratedCollection
-   var body: some View {
-      ScrollView {
-         VStack {
-            ForEach(genData.tagStats) { stat in
-               HStack {
-                  //Text("\(stat)")
-                  Text("id: \(stat.id)")
-                  Spacer()
-                  Text("target: \(stat.target)  occurs: \(stat.occurs)")
-                  Spacer()
-                  Text("by card count: \(stat.byCard)").frame(alignment: .leading)
-               }
-            }
-         }
-      }
-   }
-}
-
-struct ItemListView: View {
-   @Binding var genData: GeneratedCollection
-   var body: some View {
-      ScrollView {
-         VStack {
-            ForEach(genData.items) {item in
-               HStack {
-                  //Text("\(item)")
-                  Text("id: \(item.id)")
-                  Spacer()
-                  Text("cardiality: \(item.tagIdList.count)")
-                  Spacer()
-                  Text("tags: \(item.tagIdList.sorted())").frame(alignment: .leading)
-               }
-            }
-         }
-      }
-   }
-}
 
 // Display and entry oriented structures for array based data elements
 struct CardinalityProportion {

@@ -15,8 +15,11 @@
 		753165762C66AF9100E2DCBD /* XploreGraphicUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */; };
 		753165782C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */; };
 		753836822D18BE4E0041A1F5 /* TagNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */; };
+		755E091B2D93490B00664990 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 755E091A2D93490B00664990 /* README.md */; };
 		7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7581AA4B2D10C9940052A079 /* TagNetwork.swift */; };
+		75957A5D2DBC1D6C0029FB06 /* DataListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75957A5C2DBC1D6C0029FB06 /* DataListView.swift */; };
 		75C3CE1B2C6808D9006F5571 /* GeneratedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */; };
+		75ED3C972DA077BB0030E73E /* GraphDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED3C962DA077BB0030E73E /* GraphDataView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,8 +52,11 @@
 		753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITests.swift; sourceTree = "<group>"; };
 		753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetworkTests.swift; sourceTree = "<group>"; };
+		755E091A2D93490B00664990 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		7581AA4B2D10C9940052A079 /* TagNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetwork.swift; sourceTree = "<group>"; };
+		75957A5C2DBC1D6C0029FB06 /* DataListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataListView.swift; sourceTree = "<group>"; };
 		75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedData.swift; sourceTree = "<group>"; };
+		75ED3C962DA077BB0030E73E /* GraphDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphDataView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,8 +107,11 @@
 		753165582C66AF8F00E2DCBD /* XploreGraphic */ = {
 			isa = PBXGroup;
 			children = (
+				755E091A2D93490B00664990 /* README.md */,
 				753165592C66AF8F00E2DCBD /* XploreGraphicApp.swift */,
 				7531655B2C66AF8F00E2DCBD /* ContentView.swift */,
+				75957A5C2DBC1D6C0029FB06 /* DataListView.swift */,
+				75ED3C962DA077BB0030E73E /* GraphDataView.swift */,
 				7531655D2C66AF9000E2DCBD /* Assets.xcassets */,
 				7531655F2C66AF9000E2DCBD /* XploreGraphic.entitlements */,
 				753165602C66AF9000E2DCBD /* Preview Content */,
@@ -251,6 +260,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				755E091B2D93490B00664990 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,7 +279,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				7531655C2C66AF8F00E2DCBD /* ContentView.swift in Sources */,
+				75957A5D2DBC1D6C0029FB06 /* DataListView.swift in Sources */,
 				7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */,
+				75ED3C972DA077BB0030E73E /* GraphDataView.swift in Sources */,
 				75C3CE1B2C6808D9006F5571 /* GeneratedData.swift in Sources */,
 				7531655A2C66AF8F00E2DCBD /* XploreGraphicApp.swift in Sources */,
 			);
@@ -439,6 +451,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -478,6 +491,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

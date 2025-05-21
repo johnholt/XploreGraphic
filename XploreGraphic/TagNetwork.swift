@@ -19,7 +19,7 @@ class UndirectedGraph {
    /// Number of nodes in this graph
    let nodes: Int
    
-   /// A factor to add to an external node ID value to convert it to a zero based ID value
+   /// A factor to add to an external node ID value to convert it to a zero based row/column value
    let adjust: Int
    
    /// The number of times the pair of nodes appear in a list of co-occuring nodes.  The diagonal is zero
@@ -48,6 +48,75 @@ class UndirectedGraph {
    func clusterAssignments(type: DistanceType) -> Array<Int> {
       return Array<Int>(repeating: 0, count: self.nodes)
    }
+   /// The list of regions of connected nodes
+   /// - Parameter adjustNodeIdent: Default to returning the list of original node identifiers instead
+   ///  of the list of adjusted node identifiers that map to row/column identifiers in an adjacey matrix
+   /// - Returns: a list with one or more
+   func getIslands(adjustNodeIdent : Bool = true) -> [IslandEntry] {
+      var rslt = Array<IslandEntry>()
+      for n1 in 0..<self.nodes {
+         if numLists4Node[n1] == 0 {   //Q. Is this node used
+            continue                   //A. No, skip it
+         }
+         var inList = false
+         var island = 0
+         let ndx4Test = (adjustNodeIdent) ? convert2ID(n1) : n1
+         for i in 0..<rslt.count {
+            if rslt[i].nodes.contains(ndx4Test) { //Q. is this node claimed
+               inList = true
+               island = i
+               break
+            }
+         }
+         if inList {             //Q. already assigned
+            var neighbors = 0    //A. Yes, record details then advance to the next node
+            for m in 0..<self.nodes {
+               if m == n1 {      //Q. Is this a diagonal element
+                  continue       //A. Yes, skip it
+               }
+               // pathDistance matrix is symmetric, so [m,n1] == [n1,m]
+               if self._pathDistance[m,n1] == 1 {  //Q. Is the node adjacent
+                  neighbors += 1                   //A. Yes, count it
+               }
+            }
+            if neighbors == 1 {
+               rslt[island].numWithEnds += 1      // this node is an end
+            } else if neighbors > 1 {
+               rslt[island].numWithBridge += 1     // this node bridges
+            }
+            continue             // advance to the next node
+         }
+         // n1 is the low nominal for a new region
+         var neighbors = 0
+         var nodeList = Set<Int>()
+         for m in 0..<self.nodes {
+            let ndx4List = (adjustNodeIdent) ? convert2ID(m)  : m
+            nodeList.insert(ndx4List)
+            if m != n1 {      //Q. The diagonal
+               if self._pathDistance[m,n1] == 1 { //Q. Is m a neighbor
+                  neighbors += 1                   //A. Yes, count it
+               }
+            }
+         }
+         let newIsland = IslandEntry(id: ndx4Test, nodes: nodeList,
+                                     numWithBridge: (neighbors>1) ? neighbors : 0,
+                                     numWithEnds: (neighbors==1) ? 1 : 0)
+         rslt.append(newIsland)
+      }
+      return rslt
+   }
+   /// Convert and original node Identifier into a Row/Column value for an adjacency matrix
+   /// - Parameter nodeID: the original node ID, sucj as the Tag Identifier nominal
+   /// - Returns: a row or column value for an adjacency matrix
+   func convert2RC(_ nodeID: Int) -> Int {
+      return nodeID + self.adjust
+   }
+   /// Convert a row/column into an original node identifier, such as a tag nominal
+   /// - Parameter rc: the row/column value for an adjacency matrix
+   /// - Returns: an identifier nominal
+   func convert2ID(_ rc: Int) -> Int {
+      return rc + self.adjust
+   }
    /// A histogram of the distance metric values.  In addition to the range and count for each bin, the
    /// returned structure also includes the median, mean, and standard deviation.
    /// - Parameters:
@@ -57,20 +126,21 @@ class UndirectedGraph {
    func histogram(type: DistanceType, bins: Int) -> Array<StatsEntry> {
       let initialEntry = StatsEntry()
       var rslt = Array<StatsEntry>(repeatElement(initialEntry, count: bins))
-      var workM = Array<Double>(repeating: 0.0, count: bins)
-      var workS = Array<Double>(repeating: 0.0, count: bins)
       var tempM : Double = 0.0
       var tempS : Double = 0.0
       let baseStats = distanceStats(typ: type)
       let interval = (baseStats.highBound-baseStats.lowBound) / Float(bins)
       rslt[0].lowBound = baseStats.lowBound
+      rslt[0].id = 1
       rslt[bins-1].highBound = baseStats.highBound
       for i in 1..<bins {
          let nextBound = rslt[i-1].lowBound + interval
          rslt[i].lowBound = nextBound
          rslt[i-1].highBound = nextBound
+         rslt[i].id = rslt[i-1].id + 1
       }
       let mat = distanceMatrix(typ: type)
+      guard self.nodes > 0 else {return rslt}
       // walk through entries and calculate mean and variance sum
       for n1 in 0..<self.nodes-1 {
          if self.numLists4Node[n1] == 0 {    //Q. Was node in data
@@ -98,10 +168,22 @@ class UndirectedGraph {
       }
       return rslt
    }
+   /// The distance between 2 nodes in the specified metric.
+   /// the greatest finite magnitude is returned
+   /// - Parameters:
+   ///   - typ: the metric type for the distance
+   ///   - node1: the node number (original) of the first node
+   ///   - node2: the node number (original) of the second node
+   /// - Returns: the distance between the nodes.  The greatest finite magnitude is returned for no connection.
+   func distance(typ: DistanceType, node1: Int, node2: Int) -> Float {
+      let distMatrix = distanceMatrix(typ: typ)
+      let f = distMatrix[convert2RC(node1), convert2RC(node2)]
+      return (f > 0.0) ? f : Float.greatestFiniteMagnitude
+   }
    /// A matrix of the node to node distances
    /// - Parameter typ: the distance metric to be used
-   /// - Returns: a matrix of the distances.  The diagonal entries are zero
-   func distanceMatrix(typ: DistanceType) -> SymSqMatrix<Float> {
+   /// - Returns: a matrix of the distances.  The diagonal entries are zero.  The row and column numbers are zero based
+   private func distanceMatrix(typ: DistanceType) -> SymSqMatrix<Float> {
       if updated {
          calcDistances()
       }
@@ -114,6 +196,9 @@ class UndirectedGraph {
             return _pathDistance
       }
    }
+   /// Summary distnce statistics.  Stats include minimum, maximum, mean, and standard deviation
+   /// - Parameter typ: the distance type, PathLength, ItemsetJaccard, or TagsetJaccard
+   /// - Returns: The descriptive stats
    func distanceStats(typ: DistanceType) -> StatsEntry {
       if updated {
          calcDistances()
@@ -145,8 +230,6 @@ class UndirectedGraph {
    ///   - nodes: the number of nodes involved, must be less than 32,768
    ///   - adjustment: a value to be added to the node identifier such that the first internal ID value is zero (0)
    init(nodes: Int, adjustment: Int = 0) {
-      assert(nodes+adjustment >= 0 && nodes+adjustment <= Int16.max,
-             "Number of nodes requested exceeds max capacity")
       self.nodes = nodes
       self.adjust = adjustment
       self.pairOccurs = SymSqMatrix<Int16>(rows: nodes)
@@ -166,7 +249,6 @@ class UndirectedGraph {
    func add(list: Set<Int>) {
       var nodeList = Array<Int>()
       for nodeId in list {
-         assert(nodeId+adjust >= 0 && nodeId < nodes, "adjusted ID out of bounds: \(nodeId+adjust)")
          nodeList.append(nodeId + adjust)
       }
       for row in nodeList {
@@ -175,19 +257,19 @@ class UndirectedGraph {
                continue          //A. Yes, no need to count
             }
             if row == column {   //Q. position on the diagonal
-               numLists4Node[row] += 1 //A. Yes, Count only as a participant
+               self.numLists4Node[row] += 1 //A. Yes, Count only as a participant
                continue
             }
-            pairOccurs[row,column] += 1  // on the uppoer triangle, count the pair
+            self.pairOccurs[row,column] += 1  // on the uppoer triangle, count the pair
          }
       }
-      numListOccurrences += 1
+      self.numListOccurrences += 1
       let prevUniques = listOccurrences.count
-      listOccurrences[nodeList.sorted()] = 1 + (listOccurrences[nodeList.sorted()] ?? 0)
-      if prevUniques < listOccurrences.count {  //Q. Did we just add a new list?
-         uniqueLists += 1                       //A. Yes, count it
+      self.listOccurrences[nodeList.sorted()] = 1 + (self.listOccurrences[nodeList.sorted()] ?? 0)
+      if prevUniques < self.listOccurrences.count {  //Q. Did we just add a new list?
+         self.uniqueLists += 1                       //A. Yes, count it
       }
-      updated = true
+      self.updated = true
    }
    
    /// The number of paths added containing this node
@@ -206,7 +288,7 @@ class UndirectedGraph {
          if node+adjust == target {
             continue
          }
-         let connected = pairOccurs[node+adjust, target]
+         let connected = self.pairOccurs[node+adjust, target]
          rslt += connected > 0   ? 1 : 0
       }
       return rslt
@@ -214,8 +296,6 @@ class UndirectedGraph {
    
    /// Calculate the distance matrices for all nodes.  A zero means that there is no path connecting the pair of nodes
    private func calcDistances() -> Void {
-      var changed = true
-      var iter = 1
       var isolatedPairs: Int = nodes*(nodes-1)/2      // ordered pairs
       _itemSetDistance.clear()
       _tagSetDistance.clear()
@@ -263,15 +343,17 @@ class UndirectedGraph {
          }
       }
       // Now determine distances for pairs that are not directly associated.
+      var changed = true
+      var iter = 1
       while iter < self.nodes - 1 && changed
                && isolatedPairs > 0 {        //Q. At longest possible path or early exit?
          changed = false                     //A. No, check to extend path
          iter += 1
-         for n1 in 0..<nodes-1 {
+         for n1 in 0..<self.nodes-1 {
             if numLists4Node[n1] == 0 {      //Q. Was node in the data?
                continue                      //A. No, skip
             }
-            for n2 in n1+1..<nodes {
+            for n2 in n1+1..<self.nodes {
                if numLists4Node[n2] == 0 {   //Q. Was node in the data?
                   continue                   //A. No, skip
                }
@@ -283,15 +365,20 @@ class UndirectedGraph {
                var paths : [Int : Float] = [:]
                var itemsets : [Int : Float] = [:]
                var tagsets : [Int : Float] = [:]
-               for column in 0..<nodes {
+               var haveConnection = false
+               for column in 0..<self.nodes {
                   if _pathDistance[n1,column] != 0
                         && _pathDistance[n2,column] != 0 {  //Q. is there a connection?
                      paths[column] = _pathDistance[n1,column] + _pathDistance[n2,column]
                      itemsets[column] = _itemSetDistance[n1,column] + _itemSetDistance[n2,column]
                      tagsets[column] = _tagSetDistance[n1,column] + _tagSetDistance[n2,column]
+                     haveConnection = true
                   }
                }
-               // now select the minimums
+               if !haveConnection {       //Q. Anything to connect the nodes n1 & n2?
+                  continue                //A. Nothing, check the next pair
+               }
+               // have one or more connections, now select the minimums
                var minPathLength = Float(Int16.max)
                for length in paths.values {
                   if length < minPathLength {
@@ -340,7 +427,7 @@ class UndirectedGraph {
          if numLists4Node[n1] == 0 {      //Q. Was node in the data?
             continue                      //A. No, skip
          }
-         for n2 in n1+1..<nodes {
+         for n2 in n1+1..<self.nodes {
             if numLists4Node[n2] == 0 {      //Q. Was node in the data?
                continue                      //A. No, skip
             }
@@ -391,20 +478,23 @@ class UndirectedGraph {
 }
 
 /// Descriptive information for a collection or a slice of a collection of values
-struct StatsEntry {
+struct StatsEntry: Identifiable {
+   var id : Int
    var lowBound : Float
    var highBound: Float
    var count : Int
    var mean : Double
    var std : Double
    init() {
+      id = 0
       lowBound = Float.greatestFiniteMagnitude
       highBound = 0.0
       count = 0
       mean = 0.0
       std = 0.0
    }
-   init(lowBound: Float, highBound: Float, count: Int, mean: Double, std: Double) {
+   init(id: Int, lowBound: Float, highBound: Float, count: Int, mean: Double, std: Double) {
+      self.id = id
       self.lowBound = lowBound
       self.highBound = highBound
       self.count = count
@@ -413,6 +503,28 @@ struct StatsEntry {
    }
 }
 
+/// Descriptive information concerning the connections for a node.  Note that nodes with zero occurrences are not counted
+struct ConnectEntry: Identifiable {
+   var id: Int             // original node identifier
+   var numNoConnect: Int   // Not reachable, but present
+   var numAdjacent: Int    // directly connected in the underlying data
+   var numIndirect: Int    // connected via an adjacent node
+}
+
+/// Description of an isolated region
+struct IslandEntry: Identifiable {
+   var id: Int             // lowest node id (original or RC as requected) in region
+   var nodes: Set<Int>     // list of nodes (original or RC as requested) in region
+   var numWithBridge: Int  // number of nodes with 2 or more adjacent nodes
+   var numWithEnds: Int    // number of nodes with one 1 adjacent node
+}
+
+struct RegionEntry: Identifiable {
+   var id: Int             // zero based identifier of the region
+   var island: Int         // identifier of the island containing this dregion
+   var nodes : Set<Int>    // list of contained node identifiers (original), excludes bridge nodes
+   var bridges : Set<Int>  // list of bridge nodes.  An empty set occurs when region covers an island
+}
 
 /// Square symmetric matrix.  The upper triangle is stored.
 class SymSqMatrix<T : NumCmpr> {
@@ -456,11 +568,9 @@ class SymSqMatrix<T : NumCmpr> {
    }
    subscript(row: Int, column: Int) -> T {
       get {
-         assert(isValid(row: row, column: column), "Index values out of bounds")
          return matrix[position(row: row, column: column)]
       }
       set {
-         assert(isValid(row: row, column: column), "Index values out of bounds")
          matrix[position(row: row, column: column)] = newValue
       }
    }
