@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "3FB4AF74-A6CA-4B5D-B677-A2CC86A60743",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:XploreGraphic.xcodeproj",
+        "identifier" : "753165662C66AF9100E2DCBD",
+        "name" : "XploreGraphicTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:XploreGraphic.xcodeproj",
+        "identifier" : "753165702C66AF9100E2DCBD",
+        "name" : "XploreGraphicUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -34,19 +34,21 @@ class GeneratedCollection {
    let tags: [Tag]
    let items: [Item]
    let tagStats: [TagOccurs]
+   let builtItemsByCard: [Int]
    // Dummy initializer
    init() {
-      numItems = 0
-      numTags = 0
-      numUnusedTags = 0
-      numItemsByTagsetCard = [0]
-      avgFreq = 0.0
-      maxFreq = 0.0
-      saved = DataParameters(numItems: 0, numTags: 0, forceUnusedTags: false,
+      self.numItems = 0
+      self.numTags = 0
+      self.numUnusedTags = 0
+      self.numItemsByTagsetCard = [0]
+      self.avgFreq = 0.0
+      self.maxFreq = 0.0
+      self.saved = DataParameters(numItems: 0, numTags: 0, forceUnusedTags: false,
                              pctItemTable: [1.0], avgTagFreq: 0.0, maxTagFreq: 0.0)
-      tags = []
-      items = []
-      tagStats = []
+      self.tags = []
+      self.items = []
+      self.tagStats = []
+      self.builtItemsByCard = []
    }
    // Initializer
    init(parameters inp: DataParameters = DataParameters()) {
@@ -185,10 +187,16 @@ class GeneratedCollection {
             }
          }
       }
+      var bItemsByCard = Array<Int>(repeating: 0, count: numCardEntries)
+      for item in wItems {
+         let ndx = item.tagIdList.count
+         bItemsByCard[ndx] += 1
+      }
       // copy built results to constants
-      tags = wTags
-      items = wItems
-      tagStats = wTagOccurs
+      self.tags = wTags
+      self.items = wItems
+      self.tagStats = wTagOccurs
+      self.builtItemsByCard = bItemsByCard
    }
 }
 
@@ -225,10 +233,10 @@ struct TagOccurs : Identifiable{
 
 // Input structure with defaults
 struct DataParameters {
-   var numItems: Int = 100
-   var numTags: Int = 10
+   var numItems: Int = 10     // was 100
+   var numTags: Int = 15      // was 10
    var forceUnusedTags: Bool = false
    var pctItemTable: [Float] = [0.0, 0.2, 0.4, 0.2, 0.1, 0.1]
-   var avgTagFreq: Float = 0.1
-   var maxTagFreq: Float = 0.2
+   var avgTagFreq: Float = 0.2      // was .1
+   var maxTagFreq: Float = 0.3      // was .2
 }

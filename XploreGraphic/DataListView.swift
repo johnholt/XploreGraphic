@@ -7,15 +7,14 @@
 
 import SwiftUI
 
+
 struct TagListView: View {
    @Binding var genData: GeneratedCollection
    @Environment(\.dismiss) private var dismiss
+   
    var body: some View {
       ScrollView {
          VStack {
-            Button ("Back") {    // work around for macOS bug
-               dismiss()
-            }
             ForEach(genData.tagStats) { stat in
                HStack {
                   //Text("\(stat)")
@@ -23,11 +22,21 @@ struct TagListView: View {
                   Spacer()
                   Text("target: \(stat.target)  occurs: \(stat.occurs)")
                   Spacer()
-                  Text("by card count: \(stat.byCard)").frame(alignment: .leading)
+                  Text("by card count: [\(stat.byCard.formatted(.list(memberStyle: IntegerFormatStyle(), type: .and, width: .narrow)))]").frame(alignment: .leading)
                }
             }
          }
       }
+#if os(macOS)        // bug: nav bar back button covered up by title
+      .navigationBarBackButtonHidden(true)
+      .toolbar {
+         ToolbarItem(placement: .navigation) {
+            Button(action: { dismiss() }) {
+               Label("Back", systemImage: "arrow.left.circle")
+            }
+         }
+      }
+#endif
    }
 }
 
@@ -37,9 +46,6 @@ struct ItemListView: View {
    var body: some View {
       ScrollView {
          VStack {
-            Button("Back") {     // work around for macOS bug
-               dismiss()
-            }
             ForEach(genData.items) {item in
                HStack {
                   //Text("\(item)")
@@ -47,10 +53,20 @@ struct ItemListView: View {
                   Spacer()
                   Text("cardiality: \(item.tagIdList.count)")
                   Spacer()
-                  Text("tags: \(item.tagIdList.sorted())").frame(alignment: .leading)
+                  Text("tags: \(item.tagIdList.sorted().formatted(.list(memberStyle: IntegerFormatStyle(), type: .and, width: .narrow)))").frame(alignment: .leading)
                }
             }
          }
       }
+      #if os(macOS)        // bug: nav bar back button covered up by title
+      .navigationBarBackButtonHidden(true)
+      .toolbar {
+         ToolbarItem(placement: .navigation) {
+            Button(action: { dismiss() }) {
+               Label("Back", systemImage: "arrow.left.circle")
+            }
+         }
+      }
+      #endif
    }
 }

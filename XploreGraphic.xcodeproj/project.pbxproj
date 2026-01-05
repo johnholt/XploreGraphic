@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		750442EB2E19C67200762CF8 /* GraphNetworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750442EA2E19C67200762CF8 /* GraphNetworkView.swift */; };
 		7531655A2C66AF8F00E2DCBD /* XploreGraphicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165592C66AF8F00E2DCBD /* XploreGraphicApp.swift */; };
 		7531655C2C66AF8F00E2DCBD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7531655B2C66AF8F00E2DCBD /* ContentView.swift */; };
 		7531655E2C66AF9000E2DCBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7531655D2C66AF9000E2DCBD /* Assets.xcassets */; };
@@ -14,10 +15,14 @@
 		7531656C2C66AF9100E2DCBD /* XploreGraphicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7531656B2C66AF9100E2DCBD /* XploreGraphicTests.swift */; };
 		753165762C66AF9100E2DCBD /* XploreGraphicUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */; };
 		753165782C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */; };
-		753836822D18BE4E0041A1F5 /* TagNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */; };
+		753836822D18BE4E0041A1F5 /* UndirectedGraphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753836812D18BE4E0041A1F5 /* UndirectedGraphTests.swift */; };
 		755E091B2D93490B00664990 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 755E091A2D93490B00664990 /* README.md */; };
+		75664B182E6E353A003A3705 /* GraphNetworkDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75664B172E6E353A003A3705 /* GraphNetworkDetailView.swift */; };
+		756693282E4E866300555FE8 /* UndirectedGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750800B22E4E826900862E97 /* UndirectedGraph.swift */; };
 		7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7581AA4B2D10C9940052A079 /* TagNetwork.swift */; };
 		75957A5D2DBC1D6C0029FB06 /* DataListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75957A5C2DBC1D6C0029FB06 /* DataListView.swift */; };
+		75B09B832EFCA2BD009BECBA /* GeneratedDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B09B822EFCA2BD009BECBA /* GeneratedDataTests.swift */; };
+		75B691862EDF922100D24265 /* TagNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B691852EDF922100D24265 /* TagNetworkTests.swift */; };
 		75C3CE1B2C6808D9006F5571 /* GeneratedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */; };
 		75ED3C972DA077BB0030E73E /* GraphDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED3C962DA077BB0030E73E /* GraphDataView.swift */; };
 /* End PBXBuildFile section */
@@ -40,6 +45,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		750442EA2E19C67200762CF8 /* GraphNetworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphNetworkView.swift; sourceTree = "<group>"; };
+		750800B22E4E826900862E97 /* UndirectedGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndirectedGraph.swift; sourceTree = "<group>"; };
 		753165562C66AF8F00E2DCBD /* XploreGraphic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XploreGraphic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		753165592C66AF8F00E2DCBD /* XploreGraphicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicApp.swift; sourceTree = "<group>"; };
 		7531655B2C66AF8F00E2DCBD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -51,10 +58,14 @@
 		753165712C66AF9100E2DCBD /* XploreGraphicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XploreGraphicUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		753165752C66AF9100E2DCBD /* XploreGraphicUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITests.swift; sourceTree = "<group>"; };
 		753165772C66AF9100E2DCBD /* XploreGraphicUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XploreGraphicUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetworkTests.swift; sourceTree = "<group>"; };
+		753808E92F0C62FE00C039F6 /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
+		753836812D18BE4E0041A1F5 /* UndirectedGraphTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndirectedGraphTests.swift; sourceTree = "<group>"; };
 		755E091A2D93490B00664990 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		75664B172E6E353A003A3705 /* GraphNetworkDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphNetworkDetailView.swift; sourceTree = "<group>"; };
 		7581AA4B2D10C9940052A079 /* TagNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetwork.swift; sourceTree = "<group>"; };
 		75957A5C2DBC1D6C0029FB06 /* DataListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataListView.swift; sourceTree = "<group>"; };
+		75B09B822EFCA2BD009BECBA /* GeneratedDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedDataTests.swift; sourceTree = "<group>"; };
+		75B691852EDF922100D24265 /* TagNetworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagNetworkTests.swift; sourceTree = "<group>"; };
 		75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedData.swift; sourceTree = "<group>"; };
 		75ED3C962DA077BB0030E73E /* GraphDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphDataView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -87,6 +98,7 @@
 		7531654D2C66AF8E00E2DCBD = {
 			isa = PBXGroup;
 			children = (
+				753808E92F0C62FE00C039F6 /* TestPlan.xctestplan */,
 				753165582C66AF8F00E2DCBD /* XploreGraphic */,
 				7531656A2C66AF9100E2DCBD /* XploreGraphicTests */,
 				753165742C66AF9100E2DCBD /* XploreGraphicUITests */,
@@ -112,11 +124,14 @@
 				7531655B2C66AF8F00E2DCBD /* ContentView.swift */,
 				75957A5C2DBC1D6C0029FB06 /* DataListView.swift */,
 				75ED3C962DA077BB0030E73E /* GraphDataView.swift */,
+				750442EA2E19C67200762CF8 /* GraphNetworkView.swift */,
+				75664B172E6E353A003A3705 /* GraphNetworkDetailView.swift */,
 				7531655D2C66AF9000E2DCBD /* Assets.xcassets */,
 				7531655F2C66AF9000E2DCBD /* XploreGraphic.entitlements */,
 				753165602C66AF9000E2DCBD /* Preview Content */,
 				75C3CE1A2C6808D9006F5571 /* GeneratedData.swift */,
 				7581AA4B2D10C9940052A079 /* TagNetwork.swift */,
+				750800B22E4E826900862E97 /* UndirectedGraph.swift */,
 			);
 			path = XploreGraphic;
 			sourceTree = "<group>";
@@ -132,8 +147,10 @@
 		7531656A2C66AF9100E2DCBD /* XploreGraphicTests */ = {
 			isa = PBXGroup;
 			children = (
-				753836812D18BE4E0041A1F5 /* TagNetworkTests.swift */,
+				753836812D18BE4E0041A1F5 /* UndirectedGraphTests.swift */,
 				7531656B2C66AF9100E2DCBD /* XploreGraphicTests.swift */,
+				75B691852EDF922100D24265 /* TagNetworkTests.swift */,
+				75B09B822EFCA2BD009BECBA /* GeneratedDataTests.swift */,
 			);
 			path = XploreGraphicTests;
 			sourceTree = "<group>";
@@ -211,7 +228,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					753165552C66AF8F00E2DCBD = {
 						CreatedOnToolsVersion = 15.4;
@@ -278,6 +295,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				756693282E4E866300555FE8 /* UndirectedGraph.swift in Sources */,
+				750442EB2E19C67200762CF8 /* GraphNetworkView.swift in Sources */,
+				75664B182E6E353A003A3705 /* GraphNetworkDetailView.swift in Sources */,
 				7531655C2C66AF8F00E2DCBD /* ContentView.swift in Sources */,
 				75957A5D2DBC1D6C0029FB06 /* DataListView.swift in Sources */,
 				7581AA4C2D10C9940052A079 /* TagNetwork.swift in Sources */,
@@ -292,7 +312,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				7531656C2C66AF9100E2DCBD /* XploreGraphicTests.swift in Sources */,
-				753836822D18BE4E0041A1F5 /* TagNetworkTests.swift in Sources */,
+				753836822D18BE4E0041A1F5 /* UndirectedGraphTests.swift in Sources */,
+				75B691862EDF922100D24265 /* TagNetworkTests.swift in Sources */,
+				75B09B832EFCA2BD009BECBA /* GeneratedDataTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,6 +379,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6P6DBN9CBF;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -378,6 +401,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -419,6 +443,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6P6DBN9CBF;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -433,6 +458,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -447,17 +473,19 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"XploreGraphic/Preview Content\"";
-				DEVELOPMENT_TEAM = X522X9J38T;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -487,17 +515,19 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"XploreGraphic/Preview Content\"";
-				DEVELOPMENT_TEAM = X522X9J38T;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -524,10 +554,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
-				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = jdholt77.XploreGraphicTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -544,16 +573,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
-				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = jdholt77.XploreGraphicTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -566,10 +596,10 @@
 		753165822C66AF9100E2DCBD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
@@ -588,10 +618,10 @@
 		753165832C66AF9100E2DCBD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = X522X9J38T;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;

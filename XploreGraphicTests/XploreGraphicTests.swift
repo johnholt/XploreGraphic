@@ -75,10 +75,32 @@ final class XploreGraphicTests: XCTestCase {
    }
 
     func testPerformanceExample() throws {
-        // This is an example of a performance test case.
+       let parm1 = DataParameters(numItems: 100, numTags: 50, forceUnusedTags: false, pctItemTable: [0.0, 0.2,0.4,0.2,0.1,0.1], avgTagFreq: 0.2, maxTagFreq: 0.3)
+       let genData = GeneratedCollection(parameters: parm1)
+       let graph = UndirectedGraph(nodes: genData.numTags, adjustment: -1)
+       for item in genData.items {
+          graph.add(list: item.tagIdList)
+       }
         measure {
-            // Put the code you want to measure the time of here.
-        }
+           let stats = graph.distanceStats(typ: .PathLength, forceCalc: true)
+           XCTAssertEqual(stats.count, 1225, "Wrong count returned")
+           XCTAssertEqual(stats.lowBound, 1.0, "Wrong lower bound returned")
+           XCTAssertEqual(stats.highBound, 19.0, "Wrong higher bound returned")        }
     }
+
+   func testPerformanceTag500() throws {
+      let parm1 = DataParameters(numItems: 500, numTags: 500, forceUnusedTags: false, pctItemTable: [0.0, 0.2,0.4,0.2,0.1,0.1], avgTagFreq: 0.2, maxTagFreq: 0.3)
+      let genData = GeneratedCollection(parameters: parm1)
+      let graph = UndirectedGraph(nodes: genData.numTags, adjustment: -1)
+      for item in genData.items {
+         graph.add(list: item.tagIdList)
+      }
+      measure {
+         let stats = graph.distanceStats(typ: .PathLength, forceCalc: true)
+         XCTAssertEqual(stats.count, 124750, "Wrong count returned")
+         XCTAssertEqual(stats.lowBound, 0.0, "Wrong lower bound returned")
+         XCTAssertEqual(stats.highBound, 11.0, "Wrong higher bound returned")
+      }
+   }
 
 }

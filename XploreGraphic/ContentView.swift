@@ -23,6 +23,7 @@ struct ContentView: View {
    @State private var cardPctTab : [CardinalityProportion] = []
    // Extracted data for display
    @State private var cardCntTab : [CardinalityCount] = []
+   @State private var builtItemsByCard: [CardinalityCount] = []
    // Graph verions of items assigned topics
    @State private var graph = UndirectedGraph(nodes: 0)
    @State private var itemSetJaccardStats = StatsEntry()
@@ -31,6 +32,7 @@ struct ContentView: View {
     // State info for next level of display
    @State private var distanceType = UndirectedGraph.DistanceType.PathLength
    @State private var bins : Int = 4
+   @State private var network = TagNetwork(UndirectedGraph(nodes: 0), tags: Array<Tag>())
 
    var body: some View {
       NavigationStack {
@@ -77,6 +79,22 @@ struct ContentView: View {
             }
             Spacer()
             HStack {
+               VStack {
+                  HStack {
+                     Text("Items: ")
+                     TextField(value: $numItemsRqst,
+                               format: .number,
+                               label: {Text("Items")}
+                     ).onChange(of: numItemsRqst) {markIfChanged(genParms.numItems, numItemsRqst)}
+                  }
+                  HStack {
+                     Text("Tags:")
+                     TextField(value: $numTagsRqst,
+                               format: .number,
+                               label: {Text("Tags")}
+                     ).onChange(of: numTagsRqst) {markIfChanged(genParms.numTags, numTagsRqst)}
+                  }
+               }
                ScrollView {
                   VStack {
                      Text("% items by cardinality")
@@ -98,8 +116,15 @@ struct ContentView: View {
             HStack {
                ScrollView {
                   VStack {
-                     Text("Number of items by tag-set cardinality")
+                     Text("Number of items requested by tag-set cardinality")
                      Chart(cardCntTab, id: \.cardinality) {entry in
+                        BarMark(x: .value("Cardinality", entry.cardinality),
+                                y: .value("Items", entry.numItems),
+                                width: 4)
+                     }
+                     Spacer()
+                     Text("Number of items built by tag-set cardinality")
+                     Chart(builtItemsByCard, id: \.cardinality) {entry in
                         BarMark(x: .value("Cardinality", entry.cardinality),
                                 y: .value("Items", entry.numItems),
                                 width: 4)
@@ -118,15 +143,17 @@ struct ContentView: View {
                NavigationLink("List of items") {
                   ItemListView(genData: $genData)
                }
-               NavigationLink("Tag Graph") {
-                  GraphDataView(graph: $graph, bins: $bins)
+               NavigationLink("Graph Data") {
+                  GraphDataView(graph: $graph, bins: $bins, distanceType: $distanceType)
+               }
+               NavigationLink("Graph Network") {
+                  GraphNetworkView(network: $network)
                }
             }
          }
          .padding(5)
          .onAppear(perform: populateState)
       }
-      
    }
    
    
@@ -140,6 +167,7 @@ struct ContentView: View {
       numTagsRqst = genParms.numTags
       genData = GeneratedCollection(parameters: genParms)
       cardCntTab = cvt2CardCntArray(itemsByCard: genData.numItemsByTagsetCard)
+      builtItemsByCard = cvt2CardCntArray(itemsByCard: genData.builtItemsByCard)
       matching = true
       guard genData.numTags > 0 else { return }
       graph = UndirectedGraph(nodes: genData.numTags, adjustment: -1)
@@ -149,6 +177,7 @@ struct ContentView: View {
       pathStats = graph.distanceStats(typ: .PathLength)
       tagSetStats = graph.distanceStats(typ: .TagsetJaccard)
       itemSetJaccardStats = graph.distanceStats(typ: .ItemsetJaccard)
+      network = TagNetwork(graph, tags: genData.tags)
    }
    func applyChanges() -> Void {
       genParms.forceUnusedTags = forceUnusedTags
@@ -159,14 +188,16 @@ struct ContentView: View {
       genParms.maxTagFreq = maxTagFreq
       genData = GeneratedCollection(parameters: genParms)
       cardCntTab = cvt2CardCntArray(itemsByCard: genData.numItemsByTagsetCard)
+      builtItemsByCard = cvt2CardCntArray(itemsByCard: genData.builtItemsByCard)
       matching = true
-      graph = UndirectedGraph(nodes: genParms.numTags, adjustment: -1)
+      graph = UndirectedGraph(nodes: genData.numTags, adjustment: -1)
       for item in genData.items {
          graph.add(list: item.tagIdList)
       }
       pathStats = graph.distanceStats(typ: .PathLength)
       tagSetStats = graph.distanceStats(typ: .TagsetJaccard)
       itemSetJaccardStats = graph.distanceStats(typ: .ItemsetJaccard)
+      network = TagNetwork(graph, tags: genData.tags)
    }
    func checkPctTab(tab: [Float], card: Int, pct: Float) -> Void {
       guard card >= 0 && card < tab.count else { return }
@@ -228,9 +259,10 @@ struct CardinalityCount {
    var cardinality : Int
    var numItems : Int
 }
-func cvt2CardCntArray(itemsByCard: [Int]) -> [CardinalityCount] {
+func cvt2CardCntArray(itemsByCard: [Int], zeroBase: Bool = true) -> [CardinalityCount] {
    var rslt : [CardinalityCount] = []
-   for (card, numItems) in itemsByCard.enumerated() {
+   for (ndx, numItems) in itemsByCard.enumerated() {
+      let card = zeroBase ? ndx : ndx+1
       let entry = CardinalityCount(cardinality: card, numItems: numItems)
       rslt.append(entry)
    }

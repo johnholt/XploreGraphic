@@ -7,615 +7,424 @@
 
 import Foundation
 
-/// An undirected graph.
-@Observable
-class UndirectedGraph {
-   enum DistanceType {
-      case PathLength
-      case ItemsetJaccard
-      case TagsetJaccard
+/// The relationship network between the tags
+struct TagNetwork {
+   // Data inputs
+   let tags : [Int : Tag]
+   let numNodes: Int
+   let gridWidth: Int
+   let gridCols: Int
+   let gridSplitPad: Int
+   let gridHeight: Int
+   let gridRows: Int
+   let islandStats: [IslandStat]
+   let nodeConnectStats: [NodeConnectStat]
+   // Display constants
+   let margin = 5
+   let minTagsBeforeSplit = 20   // minimum tags to trigger split
+   let maxTagsBeforeSplit = 50   // maximum tags before forcing split
+   // Cached information
+   private var _islands : [IslandEntry]?
+   private var _regions : [RegionEntry]?
+   private var _nodes: [NodeEntry]?
+   private var _edges: [EdgeEntry]?
+   
+   /// Displable network graph of the tags.
+   /// - Parameters:
+   ///   - g: the undirected graph of the tag network
+   ///   - tags: the list of tags with descriptive information
+   ///   - aspect: the ratio of width over height for the display
+   init(_ g: UndirectedGraph, tags:[Tag], aspect: Float = 2.5) {
+      self.numNodes = g.nodes
+      self.islandStats = g.islandsFromDistanceMatrix()
+      self.nodeConnectStats = g.connectStatsFromDistanceMatrix()
+      var workTags : [Int : Tag] = Dictionary<Int,Tag>(minimumCapacity: tags.count*2)
+      for tag in tags {
+         workTags[tag.id] = tag
+      }
+      self.tags = workTags
+      var workPad: Int = 0
+      for islandStat in islandStats {
+         workPad += islandStat.nodes.count / minTagsBeforeSplit   // Islands cannot split cannot need extra room
+      }
+      self.gridSplitPad = workPad      // worst case for additional padding because of splitting into regions
+      self.gridCols = Int((Double(self.numNodes)*Double(aspect)).squareRoot().rounded(.up))
+      self.gridWidth = 2*gridCols + 2*margin + 1 + 2*self.gridSplitPad
+      self.gridRows = Int((Double(self.numNodes)/Double(aspect)).squareRoot().rounded(.up))
+      self.gridHeight = 2*gridRows + 2*margin + 1
    }
-   // Base information
-   /// Number of nodes in this graph
-   let nodes: Int
-   
-   /// A factor to add to an external node ID value to convert it to a zero based row/column value
-   let adjust: Int
-   
-   /// The number of times the pair of nodes appear in a list of co-occuring nodes.  The diagonal is zero
-   internal var pairOccurs : SymSqMatrix<Int16>
-   
-   /// Number of co-occurrence lists in which each node participates
-   internal var numLists4Node : Array<Int>
-   
-   /// Number of co-occurrence lists added
-   internal var numListOccurrences : Int = 0
-   
-   /// Number of unique lists that occurred in the underlying data
-   internal var uniqueLists : Int = 0
-   
-   /// the occurrence count for each unique list of nodes that occurred in the underlying dataset
-   internal var listOccurrences : [Array<Int> : Int] = [:]
-   
-   /// Tracks whether the externally provided information has changed requiring recomputing the derived information
-   private var updated = false
-   
-   // Derived inforamtion
-   /// Assign each node to a cluster using the specified distance metric
-   /// - Parameter type: the distance metric to use for clustering
-   /// - Returns: an array of cluster identifiers corresponding to the list of nodes.  Nodes that did
-   /// not appear in the underlying data as assigned to the 0 cluster
-   func clusterAssignments(type: DistanceType) -> Array<Int> {
-      return Array<Int>(repeating: 0, count: self.nodes)
-   }
-   /// The list of regions of connected nodes
-   /// - Parameter adjustNodeIdent: Default to returning the list of original node identifiers instead
-   ///  of the list of adjusted node identifiers that map to row/column identifiers in an adjacey matrix
-   /// - Returns: a list with one or more
-   func getIslands(adjustNodeIdent : Bool = true) -> [IslandEntry] {
+   /// The isolated groups of Tags in the network
+   func islands() -> [IslandEntry]   {
+      guard self._islands == nil else {
+         return self._islands!
+      }
       var rslt = Array<IslandEntry>()
-      for n1 in 0..<self.nodes {
-         if numLists4Node[n1] == 0 {   //Q. Is this node used
-            continue                   //A. No, skip it
+      var widthUsed = self.margin
+      let usableGrid = self.gridWidth - 2*margin - 2*self.gridSplitPad
+      for islandStat in self.islandStats {
+         let islandNumNodes = islandStat.nodes.count
+         let proportionRaw = Float(islandNumNodes)/Float(self.numNodes)
+         let proportionWidth = (proportionRaw * Float(usableGrid)).rounded()
+         let padWidth = islandNumNodes / self.minTagsBeforeSplit  // too small to split => no padding
+         // TODO: need approach for islands that are too small to use the the height provided
+         // NOTE: consider a pass through island stats looking at small islands and making a block for them
+         var islandWidth = Int(proportionWidth) + 1 + 2*padWidth
+         if islandWidth + widthUsed > self.gridWidth {
+            islandWidth = self.gridWidth - widthUsed
          }
-         var inList = false
-         var island = 0
-         let ndx4Test = (adjustNodeIdent) ? convert2ID(n1) : n1
-         for i in 0..<rslt.count {
-            if rslt[i].nodes.contains(ndx4Test) { //Q. is this node claimed
-               inList = true
-               island = i
-               break
-            }
+         let islandHeight = self.gridHeight - 2*self.margin
+         // NOTE: When merge of small regions is implemented, revisit limit because of seeds
+         let maxRegions: Int = if islandStat.nodes.count < maxTagsBeforeSplit    //Q. Have to few tags or to many seed tags
+                                    || islandStat.nodes.count / islandStat.numWithMax < minTagsBeforeSplit {
+            1                                                                    //A. Yes, force max to 1
+         } else {                                                                //A. No, make max the min number of seeds or enough to have min tags
+            max(islandStat.numWithMax, (islandStat.nodes.count + minTagsBeforeSplit - 1) / minTagsBeforeSplit)
          }
-         if inList {             //Q. already assigned
-            var neighbors = 0    //A. Yes, record details then advance to the next node
-            for m in 0..<self.nodes {
-               if m == n1 {      //Q. Is this a diagonal element
-                  continue       //A. Yes, skip it
-               }
-               // pathDistance matrix is symmetric, so [m,n1] == [n1,m]
-               if self._pathDistance[m,n1] == 1 {  //Q. Is the node adjacent
-                  neighbors += 1                   //A. Yes, count it
-               }
-            }
-            if neighbors == 1 {
-               rslt[island].numWithEnds += 1      // this node is an end
-            } else if neighbors > 1 {
-               rslt[island].numWithBridge += 1     // this node bridges
-            }
-            continue             // advance to the next node
+         let minRegions: Int = if islandStat.nodes.count < minTagsBeforeSplit {  //Q. To few tags for multiple region minimum
+            1                                                                    //A. Yes, make the minimum 1 region
+         } else {                                                                //A. No, make minimum the larger of the minimum seed count or enough to have max tag sized regions
+            min(maxRegions, (islandStat.nodes.count + maxTagsBeforeSplit - 1) / maxTagsBeforeSplit)
          }
-         // n1 is the low nominal for a new region
-         var neighbors = 0
-         var nodeList = Set<Int>()
-         for m in 0..<self.nodes {
-            let ndx4List = (adjustNodeIdent) ? convert2ID(m)  : m
-            nodeList.insert(ndx4List)
-            if m != n1 {      //Q. The diagonal
-               if self._pathDistance[m,n1] == 1 { //Q. Is m a neighbor
-                  neighbors += 1                   //A. Yes, count it
-               }
-            }
-         }
-         let newIsland = IslandEntry(id: ndx4Test, nodes: nodeList,
-                                     numWithBridge: (neighbors>1) ? neighbors : 0,
-                                     numWithEnds: (neighbors==1) ? 1 : 0)
-         rslt.append(newIsland)
+         rslt.append(IslandEntry(id: islandStat.id, nodes: islandStat.nodes,
+                                 width: islandWidth, height: islandHeight,
+                                 xpos: widthUsed, ypos: margin,
+                                 minRegions: minRegions, maxRegions: maxRegions,
+                                 maxAdjacent: islandStat.maxAdjacent))
+         widthUsed += islandWidth
       }
       return rslt
    }
-   /// Convert and original node Identifier into a Row/Column value for an adjacency matrix
-   /// - Parameter nodeID: the original node ID, sucj as the Tag Identifier nominal
-   /// - Returns: a row or column value for an adjacency matrix
-   func convert2RC(_ nodeID: Int) -> Int {
-      return nodeID + self.adjust
-   }
-   /// Convert a row/column into an original node identifier, such as a tag nominal
-   /// - Parameter rc: the row/column value for an adjacency matrix
-   /// - Returns: an identifier nominal
-   func convert2ID(_ rc: Int) -> Int {
-      return rc + self.adjust
-   }
-   /// A histogram of the distance metric values.  In addition to the range and count for each bin, the
-   /// returned structure also includes the median, mean, and standard deviation.
-   /// - Parameters:
-   ///   - type: the distance metric to use
-   ///   - bins: te number of bins
-   /// - Returns: an array for the histogram
-   func histogram(type: DistanceType, bins: Int) -> Array<StatsEntry> {
-      let initialEntry = StatsEntry()
-      var rslt = Array<StatsEntry>(repeatElement(initialEntry, count: bins))
-      var tempM : Double = 0.0
-      var tempS : Double = 0.0
-      let baseStats = distanceStats(typ: type)
-      let interval = (baseStats.highBound-baseStats.lowBound) / Float(bins)
-      rslt[0].lowBound = baseStats.lowBound
-      rslt[0].id = 1
-      rslt[bins-1].highBound = baseStats.highBound
-      for i in 1..<bins {
-         let nextBound = rslt[i-1].lowBound + interval
-         rslt[i].lowBound = nextBound
-         rslt[i-1].highBound = nextBound
-         rslt[i].id = rslt[i-1].id + 1
+   func regions() -> [RegionEntry]  {
+      guard self._regions == nil else {
+         return self._regions!
       }
-      let mat = distanceMatrix(typ: type)
-      guard self.nodes > 0 else {return rslt}
-      // walk through entries and calculate mean and variance sum
-      for n1 in 0..<self.nodes-1 {
-         if self.numLists4Node[n1] == 0 {    //Q. Was node in data
-            continue                         //A. No, skip it
-         }
-         for n2 in n1+1..<self.nodes {
-            if self.numLists4Node[n2] == 0 { //Q. Was node in data
-               continue                      //A. No, skip it
-            }
-            let rawPos = Int((mat[n1,n2]-baseStats.lowBound)/interval)
-            let ndx = max(0,min(rawPos,bins-1))    // Force index into valid range
-            // calculate the running mean and variance sum using Welford
-            // from in Knuth Art of Computer Programming Volume 2 page 232
-            let count = rslt[ndx].count + 1
-            tempM = rslt[ndx].mean + ((Double(mat[n1,n2]) - rslt[ndx].mean)/Double(count))
-            tempS = rslt[ndx].std + ((Double(mat[n1,n2]) - rslt[ndx].mean)*(Double(mat[n1,n2])-tempM))
-            rslt[ndx].mean = tempM
-            rslt[ndx].std = tempS
-            rslt[ndx].count = count
-         }
-      }
-      // complete histogram by calculating standard deviation from variance sum and return
-      for i in 0..<bins {
-         rslt[i].std = (rslt[i].count == 0) ? 0.0  : rslt[i].std / Double(rslt[i].count)
-      }
-      return rslt
-   }
-   /// The distance between 2 nodes in the specified metric.
-   /// the greatest finite magnitude is returned
-   /// - Parameters:
-   ///   - typ: the metric type for the distance
-   ///   - node1: the node number (original) of the first node
-   ///   - node2: the node number (original) of the second node
-   /// - Returns: the distance between the nodes.  The greatest finite magnitude is returned for no connection.
-   func distance(typ: DistanceType, node1: Int, node2: Int) -> Float {
-      let distMatrix = distanceMatrix(typ: typ)
-      let f = distMatrix[convert2RC(node1), convert2RC(node2)]
-      return (f > 0.0) ? f : Float.greatestFiniteMagnitude
-   }
-   /// A matrix of the node to node distances
-   /// - Parameter typ: the distance metric to be used
-   /// - Returns: a matrix of the distances.  The diagonal entries are zero.  The row and column numbers are zero based
-   private func distanceMatrix(typ: DistanceType) -> SymSqMatrix<Float> {
-      if updated {
-         calcDistances()
-      }
-      switch typ {
-         case .ItemsetJaccard:
-            return _itemSetDistance
-         case .TagsetJaccard:
-            return _tagSetDistance
-         case .PathLength:
-            return _pathDistance
-      }
-   }
-   /// Summary distnce statistics.  Stats include minimum, maximum, mean, and standard deviation
-   /// - Parameter typ: the distance type, PathLength, ItemsetJaccard, or TagsetJaccard
-   /// - Returns: The descriptive stats
-   func distanceStats(typ: DistanceType) -> StatsEntry {
-      if updated {
-         calcDistances()
-      }
-      switch typ {
-         case .ItemsetJaccard:
-            return _itemSetStats
-         case .TagsetJaccard:
-            return _tagSetStats
-         case .PathLength:
-            return _pathStats
-      }
-   }
-   /// The path distance using the Jaccard distance based upon the underlying itemsets for tags that co-occur
-   private var _itemSetDistance : SymSqMatrix<Float>
-   /// Descriptive statistics of the Itemset Distances
-   private var _itemSetStats: StatsEntry
-   /// The path distance using a Jaccard distance based upon the two tag sets in the undderlyiing data of the nodes
-   private var _tagSetDistance : SymSqMatrix<Float>
-   /// Descriptive statistics of the Tag set distances
-   private var _tagSetStats : StatsEntry
-   /// The path length between each pair of nodes
-   private var _pathDistance : SymSqMatrix<Float>
-   /// Descriptive statistics of the path distances
-   private var _pathStats : StatsEntry
-   
-   /// Initializer
-   /// - Parameters:
-   ///   - nodes: the number of nodes involved, must be less than 32,768
-   ///   - adjustment: a value to be added to the node identifier such that the first internal ID value is zero (0)
-   init(nodes: Int, adjustment: Int = 0) {
-      self.nodes = nodes
-      self.adjust = adjustment
-      self.pairOccurs = SymSqMatrix<Int16>(rows: nodes)
-      self.numLists4Node = Array<Int>(repeating: 0, count: nodes)
-      self._itemSetDistance = SymSqMatrix<Float>(rows: nodes)
-      self._tagSetDistance = SymSqMatrix<Float>(rows: nodes)
-      self._pathDistance = SymSqMatrix<Float>(rows:nodes)
-      self._pathStats = StatsEntry()
-      self._tagSetStats = StatsEntry()
-      self._itemSetStats = StatsEntry()
-   }
-   
-   /// Add a path instancce to the graph.  A path instance is a set of nodes that co-occurred
-   /// in the source data.  For instance, the items on a receipt could be captured as a set of co-occuring
-   /// nodes.
-   /// - Parameter list: the set of node identifiers that co-occur
-   func add(list: Set<Int>) {
-      var nodeList = Array<Int>()
-      for nodeId in list {
-         nodeList.append(nodeId + adjust)
-      }
-      for row in nodeList {
-         for column in nodeList {
-            if row > column {    //Q. position in lower triangle
-               continue          //A. Yes, no need to count
-            }
-            if row == column {   //Q. position on the diagonal
-               self.numLists4Node[row] += 1 //A. Yes, Count only as a participant
-               continue
-            }
-            self.pairOccurs[row,column] += 1  // on the uppoer triangle, count the pair
-         }
-      }
-      self.numListOccurrences += 1
-      let prevUniques = listOccurrences.count
-      self.listOccurrences[nodeList.sorted()] = 1 + (self.listOccurrences[nodeList.sorted()] ?? 0)
-      if prevUniques < self.listOccurrences.count {  //Q. Did we just add a new list?
-         self.uniqueLists += 1                       //A. Yes, count it
-      }
-      self.updated = true
-   }
-   
-   /// The number of paths added containing this node
-   /// - Parameter node: the node identifier
-   /// - Returns: the number of paths added that specified this node
-   func getNumPath(node: Int) -> Int {
-      return numLists4Node[node+adjust]
-   }
-   
-   /// Number of co-occuring nodes
-   /// - Parameter node: The node ID number, which will be adjusted to make it a zero based index
-   /// - Returns: the number of nodes connected to this node
-   func getNumNodesCoinciding(node: Int) -> Int {
-      var rslt = 0
-      for target in 0..<nodes {
-         if node+adjust == target {
+      var rslt = Array<RegionEntry>()
+      let islands = self._islands ?? islands()
+      for island in islands {
+         if (island.maxRegions==1)  {                    //Q: Is island too small to split
+            rslt.append(RegionEntry(id: island.id,       //A: Yes, make it a single region
+                                    island: island.id,
+                                    interior: island.nodes, exterior: Set<Int>(),
+                                    width: island.width, height: island.height,
+                                    xpos: island.xpos, ypos: island.ypos))
             continue
          }
-         let connected = self.pairOccurs[node+adjust, target]
-         rslt += connected > 0   ? 1 : 0
+         // will split the island into 2 or more regions, so get node details
+         // for the nodes on this island
+         var nodeStats = Dictionary<Int,NodeConnectStat>(minimumCapacity: island.nodes.count*2)
+         // Need to determine appropriate number of splits, assign nodes to a split
+         // and allocate the space
+         var seedSet = Set<Int>()
+         var assigned2Seed = [Int:Int]()           // (node:seed)
+         var seedAssignments = Dictionary<Int,Set<Int>>(minimumCapacity: island.maxRegions)  // seed:nodeSet
+         var adjCounts = Array<Int>(repeating: 0, count: island.maxAdjacent+1)
+         for nodeStat in self.nodeConnectStats where island.nodes.contains(nodeStat.id) {
+            nodeStats[nodeStat.id] = nodeStat
+            adjCounts[nodeStat.numAdjacent] += 1
+         }
+         var threshold = island.maxAdjacent
+         var regionSeeds = adjCounts[threshold]
+         // First, select the well connected
+         while threshold > 3 && regionSeeds + adjCounts[threshold-1] <= island.maxRegions {
+            threshold -= 1
+            regionSeeds += adjCounts[threshold]
+         }
+         if regionSeeds < island.minRegions
+               && threshold > 2                          //Q. Was there enough well connected to reach minimum?
+               && regionSeeds + adjCounts[threshold-1] <= island.maxRegions {
+            threshold -= 1                               // A. No, dip down into the nodes with 1 less adjacent
+            regionSeeds += adjCounts[threshold]          // unless there are to many
+         }
+         for nodeStat in self.nodeConnectStats where island.nodes.contains(nodeStat.id) {
+            if nodeStat.numAdjacent >= threshold {          //Q. number adjacent high enough to take all as seeds
+               seedSet.insert(nodeStat.id)                  //A. Yes, add to the list of region seeds
+               seedAssignments[nodeStat.id] = [nodeStat.id] //Start the region list with itself
+               assigned2Seed[nodeStat.id] = nodeStat.id     // Record as assigned to itself
+            }
+         }
+         // Regions with seeds are determined.  First place directly connected
+         // to the closest seed.  Nodes not adjacent to any seed will be used to fill
+         // region membership
+         //
+         // Process nodes in sorted order for repeatability
+         let workNodeSeq = island.nodes.subtracting(seedSet).sorted()
+         var assignedSet = seedSet
+         for workNode in workNodeSeq {
+            var matchDist: Float = 1.0       // Distance = 1 - Jaccard co-efficient
+            var matchSeed: Int!
+            for testSeed in seedSet.sorted() {
+               if seedAssignments[testSeed]!.count > self.maxTagsBeforeSplit {  //Q. max assigned
+                  continue                                //A. Yes, don't assign more to this one
+               }
+               let testStat = nodeStats[testSeed]!
+               if let testDist = testStat.adjTagsetDst[workNode]  {  // Q. is workNode adjacent to this seed
+                  if testDist < matchDist                            // A. Yes, check closeness and lowest ID if equal distance
+                     || (testDist == matchDist
+                         && testStat.id < matchSeed ?? Int.max) {    // accept the stat if matchSeed not yet set
+                     matchDist = testDist                            // closer to this seed so far
+                     matchSeed = testSeed
+                  }
+               }
+            }
+            // matchSeed (if present) shows the best region for the workNode
+            if let seed = matchSeed {
+               var temp = seedAssignments[seed]!
+               temp.insert(workNode)
+               assignedSet.insert(workNode)
+               seedAssignments[seed] = temp
+               assigned2Seed[workNode] = seed
+            }
+         }
+         // now assign the remaining nodes that were not directly adjacent to any seed
+         // N.B. we will need to iterate on the unassigned set because we only have
+         //   adjancent nodes for each node in the nodeStats
+         // TODO: This process may result in seeds that are larger than the desired maxTagsBeforeSplit
+         var unassignedSet = island.nodes.subtracting(assignedSet)
+         var changed = true
+         while changed && !unassignedSet.isEmpty {
+            changed = false
+            for workNode in unassignedSet {
+               let workStat = nodeStats[workNode]!
+               var matchDist: Float = 1.0 // distance is 1 - Jaccard Simalarity
+               var matchSeed: Int!
+               for (testAdj, testDist) in workStat.adjTagsetDst {
+                  if let testSeed = assigned2Seed[testAdj] {   //Q. Is the adjacent node assigned
+                     if testDist <= matchDist             {    //Q. and is it closest
+                        matchDist = testDist                   //A. Yes, record distance and region
+                        matchSeed = testSeed
+                     }
+                  }
+               }
+               if let seed = matchSeed {                     //Q. Do we have a region
+                  changed = true
+                  unassignedSet.remove(workNode)
+                  assignedSet.insert(workNode)
+                  assigned2Seed[workNode] = seed
+                  var temp = seedAssignments[seed]!
+                  temp.insert(workNode)
+                  seedAssignments[seed] = temp
+               }
+            }
+         }
+         if !unassignedSet.isEmpty {                          //Q. Did any fail to assign?
+            rslt.append(RegionEntry(id: island.id,            //A. Yes, split failed so
+                                   island: island.id,         //   create just 1 region
+                                    interior: island.nodes, exterior: Set<Int>(),
+                                    width: island.width, height: island.height,
+                                    xpos: island.xpos, ypos: island.ypos))
+            continue
+         }
+         //The nodes are all assigned to seeds
+         //
+         // TODO: want to examine and merge regions that are too small
+         //
+         // seedSet           - the list of seeds, not region ID values
+         // seedAssignments   - he node IDs assigned to each seed [seed:nodeSet]
+         // nodeStats         - the information on each node [nodeID:NodeStat]
+         // Loop on seedAssignments to produce seedExSeeds to determine which regions
+         //will need to be close to each other and seedExNodes to record the nodes involved
+         var seedExNodes = Dictionary<Int, Set<Int>>()      // [seed:external nodes]
+         var seedExSeeds = Dictionary<Int, Set<Int>>()      // [seed:external node seeds]
+         for (seed, assignedNodes) in seedAssignments {
+            var extNodeList = Set<Int>()
+            var extSeedList = Set<Int>()
+            for assigned in assignedNodes {
+               let nodeStat = nodeStats[assigned]!
+               // check each adjacent node to see if it is external
+               for adjNode in nodeStat.adjNodes where !assignedNodes.contains(adjNode) {
+                  extNodeList.insert(adjNode)
+                  extSeedList.insert(assigned2Seed[adjNode]!)
+               }
+            }
+            seedExNodes[seed] = extNodeList
+            seedExSeeds[seed] = extSeedList
+         }
+         // now have the list of external nodes for each seed and the seeds for those nodes
+         // TODO: order seeds to reduce confusion of edge crossings
+         var posSeed = Dictionary<Int, Int>() // Ordinal position, starting at 1
+         var pos = 1
+         for seed in seedSet {
+            posSeed[pos] = seed           // order as is for now
+            pos += 1
+         }
+         // write the seeds in position order
+         var xpos = island.xpos
+         let ypos = island.ypos
+         let regionHeight = island.height
+         var widthUsed = 0
+         for regionOrd in 1...seedSet.count {
+            let thisSeed = posSeed[regionOrd]!
+            let assigned = seedAssignments[thisSeed]!
+            let idRegion = assigned.min()!
+            let external = seedExNodes[thisSeed]!
+            let proportionRaw = Float(assigned.count)/Float(island.nodes.count)
+            let proportionWidth  = (proportionRaw * Float(island.width)).rounded()
+            var regionWidth = (proportionWidth>0.0) ? Int(proportionWidth) + 1  : 2
+            if regionWidth + widthUsed > island.width {
+               regionWidth = island.width - widthUsed
+            }
+            let entry = RegionEntry(id: idRegion, island: island.id,
+                                interior: assigned, exterior: external,
+                                width: regionWidth, height: regionHeight,
+                                xpos: xpos, ypos: ypos)
+            rslt.append(entry)
+            widthUsed += regionWidth
+            xpos += regionWidth
+         }
       }
       return rslt
    }
-   
-   /// Calculate the distance matrices for all nodes.  A zero means that there is no path connecting the pair of nodes
-   private func calcDistances() -> Void {
-      var isolatedPairs: Int = nodes*(nodes-1)/2      // ordered pairs
-      _itemSetDistance.clear()
-      _tagSetDistance.clear()
-      _pathDistance.clear()
-      //Determine the Jaccard distance for the nodes that co-occur in the
-      //underlying data and set those pairs to a path distance of 1
-      //Calculate both item set and tag set Jaccard distance
-      for n1 in 0..<nodes-1 {
-         if numLists4Node[n1] == 0 {         //Q. Was this node in the data?
-            continue                         //A. No, skip it
+   func nodes() -> [NodeEntry]  {
+      guard self._nodes == nil else {
+         return self._nodes!
+      }
+      var rslt = Array<NodeEntry>()
+      let regions = self._regions ?? regions()
+      var nodeStats = Dictionary<Int,NodeConnectStat>(minimumCapacity: self.numNodes*2)
+      for nodeStat in self.nodeConnectStats {    // Load dictionary for lookup
+         nodeStats[nodeStat.id] = nodeStat
+      }
+      var padColsUsed = 0
+      var prevIsland : Int?
+      for region in regions {
+         if region.island != prevIsland ?? region.island {    //Q. Are we still in the same island
+            padColsUsed = 0                                    //A. No, reset the amount of padding used
          }
-         for n2 in n1+1..<nodes {
-            if numLists4Node[n2] == 0 {      //Q. was this node in the data?
-               continue                      //A. No, skip it
+         prevIsland = region.island
+         let regionRows = (region.height - 1) / 2
+         let regionCols = (region.width - 1) / 2
+         // TODO: determine algorithm to position nodes such that edge line crosses are reduced
+         // Assign row/col positions in column major to the nodes as they are encountered
+         var currRow = 0
+         var currCol = 0
+         for node in region.interior {
+            let xposNode = region.xpos + currCol*2 + padColsUsed*2
+            let yposNode = region.ypos + currRow*2
+            let nodeStat = nodeStats[node]!
+            let inLinks = region.interior.intersection(nodeStat.adjNodes)
+            let exLinks = region.exterior.intersection(nodeStat.adjNodes)
+            let entry = NodeEntry(id: node, region: region.id, island: region.island,
+                                  inLinks: inLinks, exLinks: exLinks,
+                                  xpos: xposNode, ypos: yposNode)
+            rslt.append(entry)
+            currRow += 1
+            if currRow >= regionRows {
+               currRow = 0
+               currCol += 1
             }
-            if pairOccurs[n1,n2] == 0 {      //Q. Do these nodes co-occur?
-               continue                      //A. No, can't calculate distance
-            }                                //     from underlyiing data
-            _itemSetDistance[n1,n2] = 1.0
-                                 - (Float(pairOccurs[n1,n2])
-                                    / Float(numLists4Node[n1]
-                                         + numLists4Node[n2]
-                                         - Int(pairOccurs[n1,n2])))
-            _pathDistance[n1,n2] = 1
-            // Determine Jaccard distance using the tag sets
-            var both = 0      // both present, the cardinality of the intersection of the sets
-            var either = 0    // either one or both, the cardinality of the union of the sets
-            // use the node number as the row and vary the column number
-            for column in 0..<nodes {
-               if column == n1 {                // Q. is this the diagonal entry of the n1 row
-                  either += 1                   // A. yes, only need to check n2 entry
-                  both += (pairOccurs[n2,column] > 0) ? 1 : 0
-               } else if column == n2 {         // Q. is this the diagonal entry for the n2 row
-                  either += 1                   // A. yes, only need to check the n1 entry
-                  both += (pairOccurs[n1,column] > 0) ? 1 : 0
-               } else if pairOccurs[n1,column] > 0 && pairOccurs[n2,column] > 0 {  // Q. both exist?
-                  both += 1                                                        // A. yes
-                  either += 1
-               } else if pairOccurs[n1,column] > 0 || pairOccurs[n2,column] > 0 { // Q. only 1 is present
-                  either += 1                                                     // A. yes
-               }
-            }
-            _tagSetDistance[n1,n2] = 1.0 - Float(both)/Float(either)
-            isolatedPairs -= 1
+         }
+         if currRow == 0 {                            //Q. Did we use any of the last column
+            currCol = currCol == 0  ? 0 : currCol - 1 //A. No, reverse last column increment if done
+         }
+         if currCol > regionCols {                    //Q. Use more columns than planned
+            padColsUsed += currCol - regionCols       //A. Yes, account for pad used
+         } else {                                     //A. No, reduce used amount
+            padColsUsed = max(0, padColsUsed - regionCols + currCol)
          }
       }
-      // Now determine distances for pairs that are not directly associated.
-      var changed = true
-      var iter = 1
-      while iter < self.nodes - 1 && changed
-               && isolatedPairs > 0 {        //Q. At longest possible path or early exit?
-         changed = false                     //A. No, check to extend path
-         iter += 1
-         for n1 in 0..<self.nodes-1 {
-            if numLists4Node[n1] == 0 {      //Q. Was node in the data?
-               continue                      //A. No, skip
-            }
-            for n2 in n1+1..<self.nodes {
-               if numLists4Node[n2] == 0 {   //Q. Was node in the data?
-                  continue                   //A. No, skip
-               }
-               if _pathDistance[n1,n2] != 0 {  //Q. Already in a path
-                  continue                   //A. Yes, skip
-               }
-               // use the node numbers as the rows and vary the column number
-               // to find the pairs that connect.  Record the distances
-               var paths : [Int : Float] = [:]
-               var itemsets : [Int : Float] = [:]
-               var tagsets : [Int : Float] = [:]
-               var haveConnection = false
-               for column in 0..<self.nodes {
-                  if _pathDistance[n1,column] != 0
-                        && _pathDistance[n2,column] != 0 {  //Q. is there a connection?
-                     paths[column] = _pathDistance[n1,column] + _pathDistance[n2,column]
-                     itemsets[column] = _itemSetDistance[n1,column] + _itemSetDistance[n2,column]
-                     tagsets[column] = _tagSetDistance[n1,column] + _tagSetDistance[n2,column]
-                     haveConnection = true
-                  }
-               }
-               if !haveConnection {       //Q. Anything to connect the nodes n1 & n2?
-                  continue                //A. Nothing, check the next pair
-               }
-               // have one or more connections, now select the minimums
-               var minPathLength = Float(Int16.max)
-               for length in paths.values {
-                  if length < minPathLength {
-                     minPathLength = length
-                  }
-               }
-               var minItemsetLen = Float.greatestFiniteMagnitude
-               for length in itemsets.values {
-                  if length < minItemsetLen {
-                     minItemsetLen = length
-                  }
-               }
-               var minTagsetLen = Float.greatestFiniteMagnitude
-               for length in tagsets.values {
-                  if length < minTagsetLen {
-                     minTagsetLen = length
-                  }
-               }
-               // extend with the minimum length
-               _pathDistance[n1,n2] = minPathLength
-               _itemSetDistance[n1,n2] = minItemsetLen
-               _tagSetDistance[n1,n2] = minTagsetLen
-               isolatedPairs -= 1
-               changed = true
-            }
+      return rslt
+   }
+   func edges() -> [EdgeEntry]  {
+      guard self._edges == nil else {
+         return self._edges!
+      }
+      var rslt = Array<EdgeEntry>()
+      var nodeEntries = Dictionary<Int, NodeEntry>(minimumCapacity: 2*self.nodes().count)
+      for entry in self.nodes() {
+         nodeEntries[entry.id] = entry
+      }
+      // create the edges for pairs with node 1 ID < node 2 ID
+      // TODO: use splines instead of straight lines for edges that pass through tag center-points
+      for node1 in nodeEntries.values {
+         for id2 in node1.exLinks.union(node1.inLinks) where id2 > node1.id {
+            let node2 = nodeEntries[id2]!
+            let edge = EdgeEntry(id: NodePair(node1.id, id2), island: node1.island,
+                                 n1Region: node1.region, n2Region: node2.region,
+                                 n1Xpos: node1.xpos, n1Ypos: node1.ypos,
+                                 n2Xpos: node2.xpos, n2Ypos: node2.ypos)
+            rslt.append(edge)
          }
       }
-      // calculate stats for networks.  Running mean and variance from Welford
-      // in Knuth Art of Computer Programming Volume 2 page 232
-      _itemSetStats.highBound = 0.0
-      _itemSetStats.lowBound = Float.greatestFiniteMagnitude
-      _tagSetStats.highBound = 0.0
-      _tagSetStats.lowBound = Float.greatestFiniteMagnitude
-      _pathStats.highBound = 0.0
-      _pathStats.lowBound = Float.greatestFiniteMagnitude
-      var count: Int = 0
-      var itemSetM : Double = 0.0
-      var tagSetM: Double = 0.0
-      var pathM: Double = 0.0
-      var itemSetS: Double = 0.0
-      var tagSetS: Double = 0.0
-      var pathS: Double = 0.0
-      var tempM: Double = 0.0
-      var tempS: Double = 0.0
-      for n1 in 0..<self.nodes-1 {
-         if numLists4Node[n1] == 0 {      //Q. Was node in the data?
-            continue                      //A. No, skip
-         }
-         for n2 in n1+1..<self.nodes {
-            if numLists4Node[n2] == 0 {      //Q. Was node in the data?
-               continue                      //A. No, skip
-            }
-            count += 1
-            if _itemSetDistance[n1,n2] < _itemSetStats.lowBound {
-               _itemSetStats.lowBound = _itemSetDistance[n1,n2]
-            }
-            if _itemSetDistance[n1,n2] > _itemSetStats.highBound {
-               _itemSetStats.highBound = _itemSetDistance[n1,n2]
-            }
-            tempM = itemSetM + ((Double(_itemSetDistance[n1,n2]) - itemSetM)/Double(count))
-            tempS = itemSetS + ((Double(_itemSetDistance[n1,n2]) - itemSetM)*(Double(_itemSetDistance[n1,n2])-tempM))
-            itemSetM = tempM
-            itemSetS = tempS
-            _itemSetStats.count = count
-            if _tagSetDistance[n1,n2] < _tagSetStats.lowBound {
-               _tagSetStats.lowBound = _tagSetDistance[n1,n2]
-            }
-            if _tagSetDistance[n1,n2] > _tagSetStats.highBound {
-               _tagSetStats.highBound = _tagSetDistance[n1,n2]
-            }
-            tempM = tagSetM + ((Double(_tagSetDistance[n1,n2]) - tagSetM)/Double(count))
-            tempS = tagSetS + ((Double(_tagSetDistance[n1,n2]) - tagSetM)*(Double(_tagSetDistance[n1,n2])-tempM))
-            tagSetM = tempM
-            tagSetS = tempS
-            _tagSetStats.count = count
-            if _pathDistance[n1,n2] < _pathStats.lowBound {
-               _pathStats.lowBound = _pathDistance[n1,n2]
-            }
-            if _pathDistance[n1,n2] > _pathStats.highBound {
-               _pathStats.highBound = _pathDistance[n1,n2]
-            }
-            tempM = pathM + ((Double(_pathDistance[n1,n2]) - pathM)/Double(count))
-            tempS = pathS + ((Double(_pathDistance[n1,n2]) - pathM)*(Double(_pathDistance[n1,n2])-tempM))
-            pathM = tempM
-            pathS = tempS
-            _pathStats.count = count
-         }
-      }
-      self.updated = false
-      _itemSetStats.mean = itemSetM
-      _itemSetStats.std = (count==0) ? 0.0 : sqrt(itemSetS/Double(count))
-      _tagSetStats.mean = tagSetM
-      _tagSetStats.std = (count==0) ? 0.0  : sqrt(tagSetS/Double(count))
-      _pathStats.mean = pathM
-      _pathStats.std = (count==0) ? 0.0  : sqrt(pathS/Double(count))
+      return rslt
+   }
+   mutating func cacheResults() {
+      self._islands = islands()
+      self._regions = regions()
+      self._nodes = nodes()
+      self._edges = edges()
    }
 }
 
-/// Descriptive information for a collection or a slice of a collection of values
-struct StatsEntry: Identifiable {
-   var id : Int
-   var lowBound : Float
-   var highBound: Float
-   var count : Int
-   var mean : Double
-   var std : Double
-   init() {
-      id = 0
-      lowBound = Float.greatestFiniteMagnitude
-      highBound = 0.0
-      count = 0
-      mean = 0.0
-      std = 0.0
-   }
-   init(id: Int, lowBound: Float, highBound: Float, count: Int, mean: Double, std: Double) {
-      self.id = id
-      self.lowBound = lowBound
-      self.highBound = highBound
-      self.count = count
-      self.mean = mean
-      self.std = std
-   }
-}
-
-/// Descriptive information concerning the connections for a node.  Note that nodes with zero occurrences are not counted
-struct ConnectEntry: Identifiable {
-   var id: Int             // original node identifier
-   var numNoConnect: Int   // Not reachable, but present
-   var numAdjacent: Int    // directly connected in the underlying data
-   var numIndirect: Int    // connected via an adjacent node
-}
-
-/// Description of an isolated region
+/// Isolated partition of a network graph
 struct IslandEntry: Identifiable {
-   var id: Int             // lowest node id (original or RC as requected) in region
-   var nodes: Set<Int>     // list of nodes (original or RC as requested) in region
-   var numWithBridge: Int  // number of nodes with 2 or more adjacent nodes
-   var numWithEnds: Int    // number of nodes with one 1 adjacent node
+   var id: Int             // lowest node id (original, not row/column number
+   var nodes: Set<Int>     // number of active nodes
+   var width: Int          // width in grid squares
+   var height: Int         // height in grid squares
+   var xpos: Int           // upper left grid square x coordinate
+   var ypos: Int           // upper left grid square y coordinate
+   var minRegions: Int     // minimum number of regions to use
+   var maxRegions: Int     // maximum number of regions to use
+   var maxAdjacent: Int    // max adjacent for any node on island
+}
+extension IslandEntry: Hashable {
+   static func == (lhs: IslandEntry, rhs: IslandEntry) -> Bool {
+      return lhs.id == rhs.id
+   }
+   func hash(into hasher: inout Hasher)  {
+      hasher.combine(id)
+   }
 }
 
+/// A sub-graph of a connected network graph
 struct RegionEntry: Identifiable {
-   var id: Int             // zero based identifier of the region
-   var island: Int         // identifier of the island containing this dregion
-   var nodes : Set<Int>    // list of contained node identifiers (original), excludes bridge nodes
-   var bridges : Set<Int>  // list of bridge nodes.  An empty set occurs when region covers an island
+   var id: Int             // lowest node id (original)
+   var island: Int         // identifier of the island containing this region
+   var interior : Set<Int> // list of contained node identifiers (original), excludes bridging nodes
+   var exterior : Set<Int> // list of bridge nodes.  An empty set occurs when region covers an island
+   var width: Int          // width in grid squares
+   var height: Int         // height in grid squares
+   var xpos: Int           // upper left grid square x coordinate
+   var ypos: Int           // upper left grid square y coordinate
 }
-
-/// Square symmetric matrix.  The upper triangle is stored.
-class SymSqMatrix<T : NumCmpr> {
-   let rc: Int
-   var matrix : [T]
-   enum OperationError: Error {
-      case DimensionMismatch
-      case SubscriptBounds
-   }
-   
-   /// Initializer
-   /// - Parameter rows: number of rowd (columns)
-   init(rows: Int) {
-      rc = rows
-      let entries = (rows+1)*rows/2
-      matrix = Array<T>(repeating: T.zero, count: entries)
-   }
-   /// Are the row and column values in bounds for this matrix
-   /// - Parameters:
-   ///   - row: the row number with base zero
-   ///   - column: the column number with base zero
-   /// - Returns: both the row and column value are  >= 0 and < rows
-   func isValid(row: Int, column: Int) -> Bool {
-      return row >= 0 && row < rc && column >= 0 && column < rc
-   }
-   /// The array position associated with the row and column
-   /// - Parameters:
-   ///   - row: row number
-   ///   - column: column number
-   /// - Returns: position in the underlying array corresponding to the row and column numbers
-   func position(row: Int, column: Int) -> Int {
-      let r = row <= column  ? row : column
-      let c = row <= column  ? column : row
-      return (r*rc)-((r*(r-1))/2) + c - r
-   }
-   /// Clear the matrix to zero
-   func clear() {
-      for i in 0..<matrix.count {
-         matrix[i] = T.zero
-      }
-   }
-   subscript(row: Int, column: Int) -> T {
-      get {
-         return matrix[position(row: row, column: column)]
-      }
-      set {
-         matrix[position(row: row, column: column)] = newValue
-      }
-   }
-   /// Add the parameter into this matrix.  Dimensions must match
-   /// - Parameter addend: the matrix to be added into this matrix
-   func plus(_ addend: SymSqMatrix<T>) throws {
-      guard self.rc == addend.rc else {
-         throw OperationError.DimensionMismatch
-      }
-      for pos in 0..<self.rc {
-         self.matrix[pos] += addend.matrix[pos]
-      }
-   }
-   /// Subtract the parameter matrix from this matrix
-   /// - Parameter subtrahend: the matrix subtracted from this matrix
-   func minus(_ subtrahend: SymSqMatrix<T>) throws {
-      guard self.rc == subtrahend.rc else {
-         throw OperationError.DimensionMismatch
-      }
-      for pos in 0..<self.rc {
-         self.matrix[pos] -= subtrahend.matrix[pos]
-      }
-   }
-}
-typealias NumCmpr = Comparable & Numeric
-
-struct NodePair : Hashable {
-   let n1 : Int
-   let n2 : Int
-   init(_ node1: Int, _ node2: Int) {
-      if node1 > node2 {
-         self.n1 = node2
-         self.n2 = node1
-      } else {
-         self.n1 = node1
-         self.n2 = node2
-      }
-   }
-   static func ==(lhs: NodePair, rhs: NodePair) -> Bool {
-      return lhs.n1 == rhs.n1 && lhs.n2 == rhs.n2
+extension RegionEntry: Hashable {
+   static func == (lhs: RegionEntry, rhs: RegionEntry) -> Bool {
+      return lhs.id == rhs.id
    }
    func hash(into hasher: inout Hasher) {
-      hasher.combine(n1)
-      hasher.combine(n2)
+      hasher.combine(id)
    }
+}
+
+/// individual nodes of the network graph
+struct NodeEntry: Identifiable {
+   var id: Int             // node ID (original)
+   var region: Int         // identifier of the region containing this node
+   var island: Int         // identifier of the island containing this node
+   var inLinks: Set<Int>   // internal link targets
+   var exLinks: Set<Int>   // link targets external to this region
+   var xpos: Int           // 2D x grid position
+   var ypos: Int           // 2D y grid position
+}
+extension NodeEntry: Hashable {
+   static func == (lhs: NodeEntry, rhs: NodeEntry) -> Bool {
+      return lhs.id == rhs.id
+   }
+   func hash(into hasher: inout Hasher) {
+      hasher.combine(id)
+   }
+}
+
+/// Location information for edge connecting 2 nodes.
+struct EdgeEntry: Identifiable {
+   var id: NodePair        // pair of original node identifiers
+   var island: Int         // island identifier
+   var n1Region: Int       // region identifier for node 1
+   var n2Region: Int       // region identifier for node 2
+   var n1Xpos: Int         // 2D x grid position for node 1
+   var n1Ypos: Int         // 2D y grid position for n1 node
+   var n2Xpos: Int         // 2D x grid position for node 2
+   var n2Ypos: Int         // 2D y grid position for node 2
 }
 
 

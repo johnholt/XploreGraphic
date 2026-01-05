@@ -26,10 +26,29 @@ final class XploreGraphicUITests: XCTestCase {
    func testDisabledState() throws {
       // UI tests must launch the application that they test.
       app.launch()
+      // Test initial conditions
       XCTAssert(app.buttons["Accept"].exists)
-      XCTAssert(!app.buttons["Accept"].isEnabled)
-      // Use XCTAssert and related functions to verify your tests produce the correct results.
-   }
+      XCTAssertFalse(app.buttons["Accept"].isEnabled)
+      XCTAssert(app.menuBarItems["Graph"].exists)
+      XCTAssertFalse(app.menuItems["Magnify"].isEnabled)
+      XCTAssertFalse(app.menuItems["Reduce"].isEnabled)
+      XCTAssertFalse(app.menuItems["Reset"].isEnabled)
+      // Navigate to graph view and check for being enabled
+      let app = XCUIApplication()
+      app.activate()
+      app/*@START_MENU_TOKEN@*/.buttons["Graph Network"]/*[[".groups.buttons[\"Graph Network\"]",".buttons[\"Graph Network\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.firstMatch.click()
+      XCTAssertTrue(app.menuItems["Magnify"].isEnabled)
+      XCTAssertTrue(app.menuItems["Reduce"].isEnabled)
+      XCTAssertTrue(app.menuItems["Reset"].isEnabled)
+     }
+   
+   // Test histogram features in Graph Data view
+   
+   // Test tap of upper left object for correct tag information
+   
+   // Test drag then tap of upper left object for correct tag info, followed by scale up and same tap
+   
+   // Test scale followed by drag and then tap of upper left object for correct information
    
    func testLaunchPerformance() throws {
       if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {

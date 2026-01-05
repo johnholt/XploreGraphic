@@ -1,8 +1,8 @@
 //
-//  UndirectedGraphTests.swift
+//  TagNetworkTests.swift
 //  XploreGraphicTests
 //
-//  Created by John Holt on 12/22/24.
+//  Created by John Holt on 12/2/25.
 //
 
 import XCTest
@@ -10,92 +10,126 @@ import XCTest
 @testable
 import XploreGraphic
 
-final class UndirectedGraphTests: XCTestCase {
-   let test1Paths: Array<Set<Int>> = [[0,2], [0,1,3], [2,3],[3,4]]
-   let test1aPaths: Array<Set<Int>> = [[1,3], [1,2,4], [3,4],[4,5]]
-   let test1CnxnCount = [3,2,2,4,1]
-   let test1PathCount = [2,1,2,3,1]
-   let test2Paths: Array<Set<Int>> = [[5,6], [4,6], [5,7]]
-   
+
+final class TagNetworkTests: XCTestCase {
+   let stdItemFreqs: [Float] = [0.0, 0.2, 0.4, 0.2, 0.1, 0.1]     // by cardinality of the assigned set of tags
+   let stdAvgFreq: Float = 0.2
+   let stdMaxFreq: Float = 0.3
+
     override func setUpWithError() throws {
-       // Put setup code here.  Method called before the invocation of each test in the class
+        // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testConnectionCounts() throws {
-       let testGraph = UndirectedGraph(nodes: 7, adjustment: 0)
-       for p in test1Paths {
-          testGraph.add(list: p)
+    func testTinyNetwork() throws {
+        // This is an example of a functional test case.
+        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // Any test you write for XCTest can be annotated as throws and async.
+        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
+        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+       let numItems = 10
+       let numTags = 15
+       let parm = DataParameters(numItems: numItems, numTags: numTags, forceUnusedTags: false, pctItemTable: stdItemFreqs, avgTagFreq: stdAvgFreq, maxTagFreq: stdMaxFreq)
+       let data = GeneratedCollection(parameters: parm)
+       let graph = UndirectedGraph(nodes: data.numTags, adjustment: -1)
+       for item in data.items {
+          graph.add(list: item.tagIdList)
        }
-       XCTAssertEqual(testGraph.numListOccurrences, test1Paths.count, "Wrong number of connections")
-       for n in 0..<testGraph.nodes {
-          XCTAssertEqual(testGraph.getNumNodesCoinciding(node: n), test1CnxnCount[n], "Wrong connection count for node \(n)")
-          XCTAssertEqual(testGraph.getNumPath(node: n), test1PathCount[n], "Wrong path count for node \(n)")
-       }
+       var network = TagNetwork(graph, tags: data.tags)
+       var islands = network.islands()
+       var regions = network.regions()
+       XCTAssertEqual(islands.count, 3, "Number of islands, pre cache")
+       XCTAssertEqual(islands[0].nodes.count, 9, "Number of nodes in island 1, pre-cache")
+       XCTAssertEqual(islands[0].nodes, [7,4,1,6,2,8,5,9,3], "Island 1 nodes, pre-cache")
+       XCTAssertEqual(regions[0].interior.count, 9, "Number of interior nodes, pre-cache")
+       network.cacheResults()
+       islands = network.islands()
+       regions = network.regions()
+       XCTAssertEqual(islands.count, 3, "Number of islands")
+       XCTAssertEqual(islands[0].nodes.count, 9, "Number of nodes in island 1")
+       XCTAssertEqual(islands[0].nodes, [7,4,1,6,2,8,5,9,3], "Island 1 nodes")
+       XCTAssertEqual(regions[0].interior.count, 9, "Number of interior nodes")
+       XCTAssertEqual(regions[0].interior, [7,4,1,6,2,8,5,9,3], "Interior nodes")
+       let nodes = network.nodes().sorted(by: {lhs, rhs in lhs.id < rhs.id})
+       XCTAssertEqual(nodes[4].id, 5, "Node 5 number")
+       XCTAssertEqual(nodes[4].inLinks, [4,1,3,6,2], "Node 5 in region links")
+       let edges = network.edges().sorted(by: {lhs, rhs in lhs.id < rhs.id})
+       XCTAssertEqual(edges[3].id, NodePair(1,5), "Edge 1-5 id")
+       XCTAssertEqual(edges[3].n1Region, 1, "Edge 1-5 node 1 Region")
+       XCTAssertEqual(edges[3].n2Region, 1, "Edge 1-5 node 2 Region")
     }
    
-   func testSingleItemPaths() throws {
-      let testGraph = UndirectedGraph(nodes: 8, adjustment: 0)
-      for p in test1Paths {
-         testGraph.add(list: p)
+   func testSingleIsland() throws {
+      let numItems = 80
+      let numTags = 50
+      let parm = DataParameters(numItems: numItems, numTags: numTags, forceUnusedTags: false, pctItemTable: stdItemFreqs, avgTagFreq: stdAvgFreq, maxTagFreq: stdMaxFreq)
+      let data = GeneratedCollection(parameters: parm)
+      let graph = UndirectedGraph(nodes: data.numTags, adjustment: -1)
+      for item in data.items {
+         graph.add(list: item.tagIdList)
       }
-      for p in test2Paths {
-         testGraph.add(list: p)
-      }
-      let stats = testGraph.distanceStats(typ: .PathLength)
-      XCTAssertEqual(stats.count, 28, "Wrong item count")
-      XCTAssertEqual(testGraph.distance(typ: .PathLength, node1: 0, node2: 7), 5, "Wrong path length")
-      XCTAssertEqual(testGraph.distance(typ: .TagsetJaccard, node1: 0, node2: 4), 0.867, accuracy: 0.001, "Wrong Tagset Length for 0,4")
-      XCTAssertEqual(testGraph.distance(typ: .ItemsetJaccard, node1: 0, node2: 4), 1.5, accuracy: 0.01, "Wrong Itemset Length for 0,4")
-      XCTAssertEqual(testGraph.distance(typ: .TagsetJaccard, node1: 1, node2: 5), 2.07, accuracy: 0.01, "Wrong TagSet Length for 1,5")
+      let network = TagNetwork(graph, tags: data.tags)
+      let islands = network.islands()
+      XCTAssertEqual(islands[0].nodes.count, 50, "Island nodes")
+      XCTAssertEqual(islands[0].maxRegions, 3, "Maximum regions possible")
+      XCTAssertEqual(islands[0].minRegions, 1, "Minimum regions")
+      XCTAssertEqual(islands[0].maxAdjacent, 7, "Max adjacent nodes")
+      let regions = network.regions().sorted(by: {lhs, rhs in lhs.id < rhs.id})
+      XCTAssertEqual(regions[0].id, 1, "Region 1 ID")
+      XCTAssertEqual(regions[1].id, 11, "Region 2 ID")
+      XCTAssertEqual(regions[1].exterior.count, 2, "Links to nodes exterior of region 2")
+      XCTAssertEqual(regions[1].exterior, [9,10], "Nodes exterior of region 2")
+      let n11NodeSeq = network.nodes().filter({node in node.id == 11})
+      XCTAssertEqual(n11NodeSeq.count, 1, "11 node record")
+      XCTAssertEqual(n11NodeSeq[0].region, 11, "Node 1 region")
+      XCTAssertEqual(n11NodeSeq[0].exLinks, [9,10], "Node 11 exterior links")
+      let n10NodeSeq = network.nodes().filter({node in node.id == 10})
+      XCTAssertEqual(n10NodeSeq.count, 1, "10 node record")
+      XCTAssertEqual(n10NodeSeq[0].id, 10, "Node 10 id")
+      XCTAssertEqual(n10NodeSeq[0].region, 1, "Node 10 region")
+      XCTAssertEqual(n10NodeSeq[0].exLinks, [11], "Node 10 exterior links")
+      let n09NodeSeq = network.nodes().filter({node in node.id==9})
+      XCTAssertEqual(n09NodeSeq.count, 1, "9 node record")
+      XCTAssertEqual(n09NodeSeq[0].id, 9, "Node 9 id")
+      XCTAssertEqual(n09NodeSeq[0].region, 1, "Node 9 region")
+      let e1011EdgeSeq = network.edges().filter({$0.id == NodePair(10,11)})
+      XCTAssertEqual(e1011EdgeSeq.count, 1, "10-11 edge record")
    }
    
-   func testAdjustment() throws {
-      let t1 = UndirectedGraph(nodes: 5, adjustment: -1)
-      for p in test1aPaths {
-         t1.add(list: p)
+   func testMultiIslandMultiRegion() throws {
+      let numItems = 400
+      let numTags = 200
+      let itemFreqs: [Float] = [0.0, 0.1, 0.3, 0.4, 0.1, 0.1]
+      let avgFreq: Float = 0.01
+      let maxFreq: Float = 0.04
+      let parm = DataParameters(numItems: numItems, numTags: numTags, forceUnusedTags: false, pctItemTable: itemFreqs, avgTagFreq: avgFreq, maxTagFreq: maxFreq)
+      let data = GeneratedCollection(parameters: parm)
+      let graph = UndirectedGraph(nodes: data.numTags, adjustment: -1)
+      for item in data.items {
+         graph.add(list: item.tagIdList)
       }
-      XCTAssertEqual(t1.numListOccurrences, test1Paths.count, "Wrong number of connections")
-      for n in 1...t1.nodes {
-         XCTAssertEqual(t1.getNumNodesCoinciding(node: n), test1CnxnCount[n], "Wrong connection count for node \(n)")
-         XCTAssertEqual(t1.getNumPath(node: n), test1PathCount[n], "Wrong path count for node \(n)")
-      }
-   }
-   
-   func testZeroNodes() throws {
-      let t0 = UndirectedGraph(nodes: 0)
-      let s0Jaccard = t0.distanceStats(typ: .ItemsetJaccard)
-      let s0JaccardHist1 = t0.histogram(type: .ItemsetJaccard, bins: 1)
-      XCTAssertEqual(s0Jaccard.count, 0, "Wrong count")
-      XCTAssertEqual(s0JaccardHist1[0].count, 0, "Wrong count on histogram")
-   }
-   
-   func testGenDataDefault() throws {
-      let genParms = DataParameters()
-      let genCollection = GeneratedCollection(parameters: genParms)
-      let testUsedNodes = genCollection.numTags-genCollection.numUnusedTags
-      let testCount = (testUsedNodes*(testUsedNodes-1))/2
-      let testGraph = UndirectedGraph(nodes: genCollection.numTags, adjustment: -1)
-      for item in genCollection.items {
-         testGraph.add(list: item.tagIdList)
-      }
-      let stat = testGraph.distanceStats(typ: .PathLength)
-      XCTAssertEqual(stat.count, testCount, "Incorrect number of active nodes")
+      var network = TagNetwork(graph, tags: data.tags)
+      network.cacheResults()
+      let islands = network.islands().sorted(by: {$0.id < $1.id})
+      let regions = network.regions().sorted(by: {$0.island < $1.island || ($0.island==$1.island && $0.id < $1.id)})
+      let node_1 = network.nodes().filter({$0.id==1})[0]
+      let edge_1_10 = network.edges().filter({$0.id == NodePair(1,10)})[0]
+      XCTAssertEqual(islands[0].nodes.count, 80, "Num nodes for Island 1")
+      XCTAssertEqual(islands[1].nodes.count, 60, "Num nodes for island 21")
+      XCTAssertEqual(regions[0].exterior, [6,7,8,10,11], "Exterior nodes for island 1 region 1")
+      XCTAssertEqual(regions[1].exterior, [1,2,4,5], "Exterior nodes for island 1 region 6")
+      XCTAssertEqual(node_1.exLinks, [10,11], "Node 1 exteriior links")
+      XCTAssertEqual(edge_1_10.n1Region, 1, "Node 1 region")
+      XCTAssertEqual(edge_1_10.n2Region, 6, "Node 6 region")
    }
 
-    func testPerformanceStats() throws {
-       let testGraph = UndirectedGraph(nodes: 7, adjustment: 0)
-       for p in test1Paths {
-          testGraph.add(list: p)
-       }
+    func testPerformanceExample() throws {
+        // This is an example of a performance test case.
         self.measure {
-           let stats = testGraph.distanceStats(typ: .PathLength)
-           XCTAssertEqual(stats.count, 10, "Wrong count returned")
-           XCTAssertEqual(stats.lowBound, 1.0, "Wrong lower bound returned")
-           XCTAssertEqual(stats.highBound, 2.0, "Wrong higher bound returned")
+            // Put the code you want to measure the time of here.
         }
     }
 

@@ -12,18 +12,18 @@ struct GraphDataView: View {
    @Environment(\.dismiss) private var dismiss
    @Binding var graph: UndirectedGraph
    @Binding var bins: Int
+   @Binding var distanceType : UndirectedGraph.DistanceType
    @State private var histogram = Array(repeating: StatsEntry(), count: 1)
-   @State private var distanceType = UndirectedGraph.DistanceType.PathLength
    @State private var nTile : Int = 0
+   @State private var stats = StatsEntry()
    let nTiles = [4, 5, 10, 20, 50, 100]
+   @State private var islands = Array<IslandStat>()
+   @State private var connections = Array<NodeConnectStat>()
    
    var body: some View {
       VStack {
          HStack {
             VStack {
-               Button ("Back") {    // work around for macOS bug
-                  dismiss()
-               }
                Stepper {
                   Text("Number of bins: \(nTiles[nTile])")
                } onIncrement: {
@@ -41,8 +41,30 @@ struct GraphDataView: View {
                   Text("Itemset Jaccard").tag(UndirectedGraph.DistanceType.ItemsetJaccard)
                }
                .pickerStyle(.menu)
-               Button(action: {histogram  = graph.histogram(type: distanceType, bins: bins)}) {
+               Button(action: {newDistanceType()}) {
                   Text("Refresh")
+               }
+               HStack {
+                  VStack {
+                     Text("Low Bound")
+                     Text("\(stats.lowBound)")
+                  }
+                  VStack {
+                     Text("High Bound")
+                     Text("\(stats.highBound)")
+                  }
+                  VStack {
+                     Text("Count")
+                     Text("\(stats.count)")
+                  }
+                  VStack {
+                     Text("Mean")
+                     Text("\(stats.mean)")
+                  }
+                  VStack {
+                     Text("Std")
+                     Text("\(stats.std)")
+                  }
                }
             }
             Table(histogram) {
@@ -53,11 +75,50 @@ struct GraphDataView: View {
                TableColumn("Std") {entry in Text("\(entry.std)")}
             }
          }
-         .onAppear(perform: {prepState()})
+         Table(islands) {
+            TableColumn("ID") {entry in Text("\(entry.id)")}
+            TableColumn("Nodes") {entry in Text("\(entry.nodes.count)")}
+            TableColumn("w/<3 Adj") {entry in Text("\(entry.numWith2Adj + entry.numWith1Adj)")}
+            TableColumn("w/3 Adj") {entry in Text("\(entry.numWith3Adj)")}
+            TableColumn("w/4 Adj") {entry in Text("\(entry.numWith4Adj)")}
+            TableColumn("w/many Adj") {entry in Text("\(entry.numWithMany)")}
+            TableColumn("w/Max Adj") {entry in Text("\(entry.numWithMax)")}
+            TableColumn("Min Adjacent") {entry in Text("\(entry.minAdjacent)")}
+            TableColumn("Max Adjacent") {entry in Text("\(entry.maxAdjacent)")}
+            TableColumn("Avg Adjacent") {entry in Text("\(entry.avgAdjacent)")}
+         }
+         Table(connections) {
+            TableColumn("Node") {entry in Text("\(entry.id)")}
+            TableColumn("Isolated") {entry in Text("\(entry.numNoConnect)")}
+            TableColumn("Adjacent") {entry in Text("\(entry.numAdjacent)")}
+            TableColumn("Indirect") {entry in Text("\(entry.numIndirect)")}
+            TableColumn("Min Distance") {entry in Text("\(entry.minAdjTagset)")}
+            TableColumn("Max Distance") {entry in Text("\(entry.maxAdjTagset)")}
+            TableColumn("Avg Distance") {entry in Text("\(entry.avgAdjTagset)")}
+            TableColumn("Number Below Avg") {entry in Text("\(entry.numBelowAvg)")}
+         }
+         Table(connections) {
+            TableColumn("ID") {entry in Text("\(entry.id)")}
+            TableColumn("Adj nodes") {entry in Text("\(entry.adjNodes.formatted(.list(memberStyle: IntegerFormatStyle(), type: .and, width: .narrow)))")}
+            TableColumn("Common Counts") {entry in Text("\(entry.adjNumCommon)")}
+            TableColumn("Adj J-Dist") {entry in Text("\(entry.adjTagsetDst)")}
+        }
       }
+      .onAppear(perform: {prepState()})
+#if os(macOS)        // bug: nav bar back button covered up by title
+      .navigationBarBackButtonHidden(true)
+      .toolbar {
+         ToolbarItem(placement: .navigation) {
+            Button(action: { dismiss() }) {
+               Label("Back", systemImage: "arrow.left.circle")
+            }
+         }
+      }
+#endif
    }
    
    func prepState() -> Void {
+      stats = graph.distanceStats(typ: distanceType)
       histogram = graph.histogram(type: distanceType, bins: bins)
       var temp = nTiles.count-1
       for i in 0..<nTiles.count {
@@ -65,8 +126,14 @@ struct GraphDataView: View {
             temp = i
             break
          }
-         nTile = temp
       }
+      nTile = temp
+      islands = graph.islandsFromDistanceMatrix(adjustNodeIdent: true)
+      connections = graph.connectStatsFromDistanceMatrix()
+   }
+   func newDistanceType() -> Void {
+      histogram  = graph.histogram(type: distanceType, bins: bins)
+      stats = graph.distanceStats(typ: distanceType)
    }
 }
 
@@ -83,7 +150,8 @@ func makeGraph4Preview() -> UndirectedGraph {
 var graph4Preview = makeGraph4Preview()
 var boundGraph = Binding.constant(graph4Preview)
 var boundBins = Binding.constant(Int(4))
+var distType = Binding.constant(UndirectedGraph.DistanceType.PathLength)
 
 #Preview {
-   GraphDataView(graph: boundGraph, bins: boundBins)
+   GraphDataView(graph: boundGraph, bins: boundBins, distanceType: distType)
 }
