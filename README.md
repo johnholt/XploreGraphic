@@ -10,7 +10,9 @@ The GeneratedData class will generate data matching supplied distribution parame
 
 The numbers of *Tag* and *Item* records to generated are supplied as parameters,
 but the number of *Tag* records generated can be larger than requested if needed
-inorder to satisfy the .  The **averageTagFreq** parameter.
+inorder to satisfy the **averageTagFreq** parameter.
+
+The parameters are:
 
 numItems
 : Number of items
@@ -27,18 +29,18 @@ maxTagFreq
 : maximum tag frequency.
 
 ###  Undirected Graph
-The UndirectredGraph class captures the *Tag* instances as graph nodes and the *Item* instances
-as edges.  The class will determine the paths and the minimum distance between each pair of nodes.  
+The UndirectredGraph class captures the *Tag* instances as graph vertices and the *Item* instances
+as edges.  The class will determine the paths and the minimum distance between each pair of vertices.  
 
 ### Tag Network
-The TagNetwork value type determines the 2D graph layout of the data.
+The TagNetwork value type determines the 2D graph layout of the data.  The aspect ratio is an input parameter.
 
 ### Tests
 There are unit tests and UI tests provided.
 
 ## Operation
 There are two phases of operation.  The first phase is the generation of test data 
-and the second phase is the exploration of the graph.  
+and the second phase is the exploration and display of the graph.  
 
 The data generation phase shows a frequency graph of the generated data and supports 
 browsing the generated data.
@@ -56,7 +58,7 @@ accomplished by mapping the screen co-ordinates into the co-ordinate system used
 layout the graphic.  
 
 
-## Developer notes
+## Programming notes
 In GraphNetworkView, the co-ordinate space was explicitly stated.  It appears that using the default (.local)
 would have been sufficient.
 
@@ -64,9 +66,16 @@ The order of the objects in the graph is influenced by the position of objects i
 placement would have required keeping an ordered copy of the objects and iterating through the ordered copy
 instead of iterating through a dictionary.
 
-A Format Style for a list of integer tuples is needs to display the dictionary contents in the GraphDataView.
+A Format Style for a list of tuples from enumerated() is needed to display the dictionary contents in the GraphDataView.
+Unfortunately, this would require the ability to extend a tuple type which is experimental.  The work around was to create
+functions that converted the two dictionsaries of interest into an array of strings.
 
 All of the work is performed in the main thread.  Moving some of the UndirectedGraph operations to another
 thread should be done for larger networks.
 
+The drag and the animation for the drag needed to be done inside of the scale effect and the scale effect modifier
+for the correct behavior on all platforms.  It is not clear why this would be the case.
 
+A GeometryReader was used to wrap the Canvas so that the Canvas size information could be provided to some of the Canvas
+modifier definitions.  This results in the same information held by the parameter value for the GeometryReader closure
+and by the parameter value for the Canvas closure.  There should be a better way to do this.

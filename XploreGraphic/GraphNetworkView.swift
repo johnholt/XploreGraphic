@@ -51,9 +51,6 @@ struct GraphNetworkView: View {
              Spacer()
              GeometryReader {geometry in
                 Canvas {ctx, size in
-//                   let factorWidth = size.width / Double(network.gridWidth)
-//                   let factorHeight = size.height / Double(network.gridHeight)
-//                   let factor = Double.maximum(minFactor, Double.minimum(factorWidth, factorHeight))
                    let factor = calcFactor(network: network, displaySize: size)
                    let midPoint = factor / 2.0
                    let radius = factor / 4.0

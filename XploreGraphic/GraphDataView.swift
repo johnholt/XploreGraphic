@@ -100,8 +100,8 @@ struct GraphDataView: View {
          Table(connections) {
             TableColumn("ID") {entry in Text("\(entry.id)")}
             TableColumn("Adj nodes") {entry in Text("\(entry.adjNodes.formatted(.list(memberStyle: IntegerFormatStyle(), type: .and, width: .narrow)))")}
-            TableColumn("Common Counts") {entry in Text("\(entry.adjNumCommon)")}
-            TableColumn("Adj J-Dist") {entry in Text("\(entry.adjTagsetDst)")}
+            TableColumn("Common Counts") {entry in Text("\(cvtDictIntInt(entry.adjNumCommon).formatted(.list(type: .and, width: .short)))")}
+            TableColumn("Adj J-Dist") {entry in Text("\(cvtDictIntFloat(entry.adjTagsetDst).formatted(.list(type: .and, width: .short)))")}
         }
       }
       .onAppear(perform: {prepState()})
@@ -135,6 +135,23 @@ struct GraphDataView: View {
       histogram  = graph.histogram(type: distanceType, bins: bins)
       stats = graph.distanceStats(typ: distanceType)
    }
+}
+
+func cvtDictIntFloat(_ inp: [Int:Float]) -> [String] {
+   var rslt = Array<String>()
+   for (key, value) in inp {
+      let s = "\(key):\(value)"
+      rslt.append(s)
+   }
+   return rslt
+}
+func cvtDictIntInt(_ inp: [Int:Int]) -> [String] {
+   var rslt = Array<String>()
+   for (key, value) in inp {
+      let s = "\(key):\(value)"
+      rslt.append(s)
+   }
+   return rslt
 }
 
 
