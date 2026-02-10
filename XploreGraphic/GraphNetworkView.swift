@@ -131,7 +131,7 @@ struct GraphNetworkView: View {
                          attachmentAnchor: PopoverAttachmentAnchor.point(UnitPoint(x: tapLocation.x/geometry.size.width, y: tapLocation.y/geometry.size.height)),
                          content: { info in
                             VStack {
-                               Text("\(info.tag.name) at \(info.nodeEntry?.xpos ?? -1),\(info.nodeEntry?.ypos ?? -1)")
+                               Text("\(info.tag.name) at \(info.nodeEntry?.xpos ?? -1),\(info.nodeEntry?.ypos ?? -1)").accessibilityIdentifier("GraphNetworkViewPopupTagInfo1")
                                Text("Tap was (\(info.tapPostion.x),\(info.tapPostion.y)) adjusted to (\(info.adjustedTap.x), \(info.adjustedTap.y))")
                                Text(" and Search was (\(info.srchPosition.x), \(info.srchPosition.y))")
                                Text("There were \(info.matches) matches.  The screen factor was \(info.screenFactor)")

@@ -146,9 +146,11 @@ struct ContentView: View {
                NavigationLink("Graph Data") {
                   GraphDataView(graph: $graph, bins: $bins, distanceType: $distanceType)
                }
+               .accessibilityIdentifier("GraphDataView")
                NavigationLink("Graph Network") {
                   GraphNetworkView(network: $network)
                }
+               .accessibilityIdentifier("GraphNetworkView")
             }
          }
          .padding(5)

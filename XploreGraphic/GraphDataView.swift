@@ -25,7 +25,7 @@ struct GraphDataView: View {
          HStack {
             VStack {
                Stepper {
-                  Text("Number of bins: \(nTiles[nTile])")
+                  Text("Number of bins: \(nTiles[nTile])").accessibilityIdentifier("GraphDataViewNumBinsStepperText")
                } onIncrement: {
                   nTile += 1
                   if nTile >= nTiles.count { nTile = 0}
@@ -35,35 +35,38 @@ struct GraphDataView: View {
                   if nTile < 0 { nTile = nTiles.count - 1 }
                   bins = nTiles[nTile]
                }
+               .accessibilityIdentifier("GraphDataViewNumBinsStepper")
                Picker("Distance Measure", selection: $distanceType) {
                   Text("Path Length").tag(UndirectedGraph.DistanceType.PathLength)
                   Text("Tagset Jaccard").tag(UndirectedGraph.DistanceType.TagsetJaccard)
                   Text("Itemset Jaccard").tag(UndirectedGraph.DistanceType.ItemsetJaccard)
                }
                .pickerStyle(.menu)
+               .accessibilityIdentifier("GraphDataViewMeasurePicker")
                Button(action: {newDistanceType()}) {
                   Text("Refresh")
                }
+               .accessibilityIdentifier("GraphDataViewRefreshButton")
                HStack {
                   VStack {
                      Text("Low Bound")
-                     Text("\(stats.lowBound)")
+                     Text("\(stats.lowBound)").accessibilityIdentifier("GraphDataViewLowBound")
                   }
                   VStack {
                      Text("High Bound")
-                     Text("\(stats.highBound)")
+                     Text("\(stats.highBound)").accessibilityIdentifier("GraphDataViewHighBound")
                   }
                   VStack {
                      Text("Count")
-                     Text("\(stats.count)")
+                     Text("\(stats.count)").accessibilityIdentifier("GraphDataViewCount")
                   }
                   VStack {
                      Text("Mean")
-                     Text("\(stats.mean)")
+                     Text("\(stats.mean)").accessibilityIdentifier("GraphDataViewMean")
                   }
                   VStack {
                      Text("Std")
-                     Text("\(stats.std)")
+                     Text("\(stats.std)").accessibilityIdentifier("GraphDataViewStdDev")
                   }
                }
             }
@@ -74,6 +77,7 @@ struct GraphDataView: View {
                TableColumn("Mean") {entry in Text("\(entry.mean)")}
                TableColumn("Std") {entry in Text("\(entry.std)")}
             }
+            .accessibilityIdentifier("GraphDataViewHistogram")
          }
          Table(islands) {
             TableColumn("ID") {entry in Text("\(entry.id)")}
@@ -87,6 +91,7 @@ struct GraphDataView: View {
             TableColumn("Max Adjacent") {entry in Text("\(entry.maxAdjacent)")}
             TableColumn("Avg Adjacent") {entry in Text("\(entry.avgAdjacent)")}
          }
+         .accessibilityIdentifier("GraphDataViewIslandsList")
          Table(connections) {
             TableColumn("Node") {entry in Text("\(entry.id)")}
             TableColumn("Isolated") {entry in Text("\(entry.numNoConnect)")}
@@ -97,12 +102,14 @@ struct GraphDataView: View {
             TableColumn("Avg Distance") {entry in Text("\(entry.avgAdjTagset)")}
             TableColumn("Number Below Avg") {entry in Text("\(entry.numBelowAvg)")}
          }
+         .accessibilityIdentifier("GraphDataViewConnectionsList1")
          Table(connections) {
             TableColumn("ID") {entry in Text("\(entry.id)")}
             TableColumn("Adj nodes") {entry in Text("\(entry.adjNodes.formatted(.list(memberStyle: IntegerFormatStyle(), type: .and, width: .narrow)))")}
             TableColumn("Common Counts") {entry in Text("\(cvtDictIntInt(entry.adjNumCommon).formatted(.list(type: .and, width: .short)))")}
             TableColumn("Adj J-Dist") {entry in Text("\(cvtDictIntFloat(entry.adjTagsetDst).formatted(.list(type: .and, width: .short)))")}
-        }
+         }
+         .accessibilityIdentifier("GraphDataViewConnectionsList2")
       }
       .onAppear(perform: {prepState()})
 #if os(macOS)        // bug: nav bar back button covered up by title
