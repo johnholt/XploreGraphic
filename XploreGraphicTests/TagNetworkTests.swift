@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Foundation
 
 @testable
 import XploreGraphic
@@ -124,6 +125,18 @@ final class TagNetworkTests: XCTestCase {
       XCTAssertEqual(node_1.exLinks, [10,11], "Node 1 exteriior links")
       XCTAssertEqual(edge_1_10.n1Region, 1, "Node 1 region")
       XCTAssertEqual(edge_1_10.n2Region, 6, "Node 6 region")
+   }
+   
+   func testFactorCalculation() throws {
+      let display1 = CGSize(width: 1000.5, height: 750.5)
+      let f1 = calcFactor(gridWidth: 40, gridHeight: 30, displaySize: display1)
+      XCTAssertEqual(f1, 25.0125, "Large landscape")
+      let display2 = CGSize(width: 750.5, height: 1000.5)
+      let f2 = calcFactor(gridWidth: 30, gridHeight: 40, displaySize: display2)
+      XCTAssertEqual(f2, 25.0125, "Large portrait")
+      let display3 = CGSize(width: 500, height: 300)
+      let f3 = calcFactor(gridWidth: 60, gridHeight: 50, displaySize: display3)
+      XCTAssertEqual(f3, 10.0, "Small display, min factor used")
    }
 
     func testPerformanceExample() throws {

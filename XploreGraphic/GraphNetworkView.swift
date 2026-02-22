@@ -8,7 +8,6 @@
 import SwiftUI
 import Foundation
 
-internal let minFactor: Double = 10.0
 
 struct GraphNetworkView: View {
    @Environment(\.dismiss) private var dismiss
@@ -46,7 +45,12 @@ struct GraphNetworkView: View {
           VStack {
              Spacer()
              Text("There are \(network.numNodes) tags in the graph")
-             Text("The working grid is \(network.gridWidth) x \(network.gridHeight)")
+             HStack {
+                Text("The working grid is ")
+                Text("\(network.gridWidth)").accessibilityIdentifier("GraphNetworkViewGridWidth")
+                Text(" x ")
+                Text("\(network.gridHeight)").accessibilityIdentifier("GraphNetworkViewGridHeight")
+             }
              Text("There are \(islands.count) islands, and \(regions.count) regions")
              Spacer()
              GeometryReader {geometry in
@@ -111,6 +115,7 @@ struct GraphNetworkView: View {
                    nodePath.closeSubpath()
                    ctx.stroke(nodePath, with: .color(.black), lineWidth: 2.0)
                 }
+                .accessibilityIdentifier("GraphNetworkViewCanvas")
                 .coordinateSpace(.named(canvasSpaceName))
                 .gesture(dragGraph)
                 .offset(currentOffset)
@@ -131,7 +136,12 @@ struct GraphNetworkView: View {
                          attachmentAnchor: PopoverAttachmentAnchor.point(UnitPoint(x: tapLocation.x/geometry.size.width, y: tapLocation.y/geometry.size.height)),
                          content: { info in
                             VStack {
-                               Text("\(info.tag.name) at \(info.nodeEntry?.xpos ?? -1),\(info.nodeEntry?.ypos ?? -1)").accessibilityIdentifier("GraphNetworkViewPopupTagInfo1")
+                               HStack {
+                                  Text("\(info.tag.name) at ")
+                                  Text("\(info.nodeEntry?.xpos ?? -1)").accessibilityIdentifier("GraphNetworkViewPopupTagInfoXpos")
+                                  Text(",")
+                                  Text("\(info.nodeEntry?.ypos ?? -1)").accessibilityIdentifier("GraphNetworkViewPopupTagInfoYpos")
+                               }
                                Text("Tap was (\(info.tapPostion.x),\(info.tapPostion.y)) adjusted to (\(info.adjustedTap.x), \(info.adjustedTap.y))")
                                Text(" and Search was (\(info.srchPosition.x), \(info.srchPosition.y))")
                                Text("There were \(info.matches) matches.  The screen factor was \(info.screenFactor)")
@@ -217,10 +227,9 @@ func findTagInfo(network: TagNetwork, displaySize: CGSize, tapLocation: CGPoint,
 }
 
 func calcFactor(network: TagNetwork, displaySize: CGSize) -> Double {
-   let factorWidth = displaySize.width / Double(network.gridWidth)
-   let factorHeight = displaySize.height / Double(network.gridHeight)
-   let factor = Double.maximum(minFactor, Double.minimum(factorWidth, factorHeight))
-   return factor
+   return calcFactor(gridWidth: network.gridWidth,
+                     gridHeight: network.gridHeight,
+                     displaySize: displaySize)
 }
 
 //Preview support

@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Foundation
 
 @testable
 import XploreGraphic
@@ -44,7 +45,9 @@ final class XploreGraphicUITests: XCTestCase {
       XCTAssertTrue(app.menuItems["Reduce"].isEnabled)
       XCTAssertTrue(app.menuItems["Reset"].isEnabled)
       // Navigate back and verify that they are disabled
-      app.buttons["Back"].firstMatch.click()
+      let backButton = app.buttons["Back"].firstMatch
+      backButton.click()
+      backButton.waitForNonExistence(timeout: 5.0)
       XCTAssertFalse(app.menuItems["Magnify"].isEnabled)
       XCTAssertFalse(app.menuItems["Reduce"].isEnabled)
       XCTAssertFalse(app.menuItems["Reset"].isEnabled)
@@ -100,21 +103,60 @@ final class XploreGraphicUITests: XCTestCase {
    }
    
    // Test tap of upper left object for correct tag information
-   // *** Test from recording not working.  Need to control click placement
    func testSimmpleShowInfo() throws {
       let app = XCUIApplication()
       app.activate()
       app/*@START_MENU_TOKEN@*/.buttons["GraphNetworkView"]/*[[".groups",".buttons[\"Graph Network\"]",".buttons[\"GraphNetworkView\"]"],[[[-1,2],[-1,1],[-1,0,1]],[[-1,2],[-1,1]]],[0]]@END_MENU_TOKEN@*/.firstMatch.click()
-      
-      let element = app.groups/*@START_MENU_TOKEN@*/.containing(.staticText, identifier: "There are 15 tags in the graph").firstMatch/*[[".element(boundBy: 0)",".containing(.staticText, identifier: \"There are 3 islands, and 3 regions\").firstMatch",".containing(.staticText, identifier: \"The working grid is 25 x 17\").firstMatch",".containing(.staticText, identifier: \"There are 15 tags in the graph\").firstMatch"],[[[-1,3],[-1,2],[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/
-      element.click()
+      // pickup grid size from info box elements at top of screen
+      XCTAssert(app.staticTexts["GraphNetworkViewGridWidth"].exists)
+      let gridWidth : Int
+      if let width = Int(app.staticTexts["GraphNetworkViewGridWidth"].value as! String) {
+         gridWidth = width
+      } else {
+         gridWidth = 0
+         XCTFail("gridth width value is not an integer value")
+      }
+      XCTAssert(app.staticTexts["GraphNetworkViewGridHeight"].exists)
+      let gridHeight : Int
+      if let height = Int(app.staticTexts["GraphNetworkViewGridHeight"].value as! String) {
+         gridHeight = height
+      } else {
+         gridHeight = 0
+         XCTFail("grid height value is not an integer value")
+      }
+      print(" the grid is \(gridHeight)x\(gridWidth) ")
+      // now extract the drawing canvas element information
+      let canvasElement = app.otherElements.matching(identifier: "GraphNetworkViewCanvas").firstMatch
+      let canvasFrame = canvasElement.frame
+      print("Canvas is at \(canvasFrame.origin) and is \(canvasFrame.height)x\(canvasFrame.width) with size \(canvasFrame.size)")
+      let factor = calcFactor(gridWidth: gridWidth, gridHeight: gridHeight, displaySize: canvasFrame.size)
+      print("Factor is \(factor)")
+      // now move cursor to upper left tag position and generate the pop over
+      let xpos_5 = 5 * factor / canvasFrame.width
+      let ypos_5 = 5 * factor / canvasFrame.height
+      print("Initial x is \(xpos_5) and initial y is \(ypos_5)" )
+      let pos5_5 = canvasElement.coordinate(withNormalizedOffset: CGVector(dx: xpos_5, dy: ypos_5))
+      pos5_5.click()
+      // Check that the correct position was checked
+      XCTAssert(app.staticTexts["GraphNetworkViewPopupTagInfoXpos"].waitForExistence(timeout: 5))
+      if let xpos = app.staticTexts["GraphNetworkViewPopupTagInfoXpos"].firstMatch.value as? String {
+         XCTAssertEqual(xpos, "5", "Upper left x pos")
+      } else {
+         XCTFail("Tag Info xpos value not a String")
+      }
+      XCTAssert(app.staticTexts["GraphNetworkViewPopupTagInfoYpos"].exists)
+      if let ypos = app.staticTexts["GraphNetworkViewPopupTagInfoYpos"].firstMatch.value as? String {
+         XCTAssertEqual(ypos, "5", "Upper left y pos")
+      } else {
+         XCTFail("Tag Info ypos value not a String")
+      }
    }
    
    // Test drag then tap of upper left object for correct tag info, followed by scale up and same tap
-   // *** same problem as above
+   //
    
    // Test scale followed by drag and then tap of upper left object for correct information
-   // *** same problem as above
+   //
    
    func testLaunchPerformance() throws {
       if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
@@ -124,4 +166,15 @@ final class XploreGraphicUITests: XCTestCase {
          }
       }
    }
+   
+   // Helper copied from project file GraphNetworkView.swift
+   // This needs to be replaced.
+//   func calcFactor(gridWidth: Int, gridHeight: Int, displaySize: CGSize) -> Double {
+//      let minFactor: Double = 10.0
+//      let factorWidth = displaySize.width / Double(gridWidth)
+//      let factorHeight = displaySize.height / Double(gridHeight)
+//      let factor = Double.maximum(minFactor, Double.minimum(factorWidth, factorHeight))
+//      return factor
+//   }
+
 }
