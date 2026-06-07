@@ -140,9 +140,11 @@ struct ContentView: View {
                NavigationLink("List of tags") {
                   TagListView(genData: $genData)
                }
+               .accessibilityIdentifier("TagList")
                NavigationLink("List of items") {
                   ItemListView(genData: $genData)
                }
+               .accessibilityIdentifier("ItemList")
                NavigationLink("Graph Data") {
                   GraphDataView(graph: $graph, bins: $bins, distanceType: $distanceType)
                }

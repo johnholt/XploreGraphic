@@ -7,6 +7,8 @@
 
 import Foundation
 
+internal let tagnetworkDisplayMargin : Int = 5
+
 /// The relationship network between the tags
 struct TagNetwork {
    // Data inputs
@@ -20,7 +22,7 @@ struct TagNetwork {
    let islandStats: [IslandStat]
    let nodeConnectStats: [NodeConnectStat]
    // Display constants
-   let margin = 5
+   let margin = tagnetworkDisplayMargin
    let minTagsBeforeSplit = 20   // minimum tags to trigger split
    let maxTagsBeforeSplit = 50   // maximum tags before forcing split
    // Cached information

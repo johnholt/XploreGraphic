@@ -37,12 +37,12 @@ struct GraphDataView: View {
                }
                .accessibilityIdentifier("GraphDataViewNumBinsStepper")
                Picker("Distance Measure", selection: $distanceType) {
-                  Text("Path Length").tag(UndirectedGraph.DistanceType.PathLength)
-                  Text("Tagset Jaccard").tag(UndirectedGraph.DistanceType.TagsetJaccard)
-                  Text("Itemset Jaccard").tag(UndirectedGraph.DistanceType.ItemsetJaccard)
+                  Text("Path Length").tag(UndirectedGraph.DistanceType.PathLength).accessibilityIdentifier("GraphDataViewDistPickPathLength")
+                  Text("Tagset Jaccard").tag(UndirectedGraph.DistanceType.TagsetJaccard).accessibilityIdentifier("GraphDataViewDistPickTagsetJaccard")
+                  Text("Itemset Jaccard").tag(UndirectedGraph.DistanceType.ItemsetJaccard).accessibilityIdentifier("GraphDataViewDistPickItemsetJaccard")
                }
+               .accessibilityIdentifier("GraphDataViewDistancePicker")
                .pickerStyle(.menu)
-               .accessibilityIdentifier("GraphDataViewMeasurePicker")
                Button(action: {newDistanceType()}) {
                   Text("Refresh")
                }

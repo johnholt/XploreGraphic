@@ -18,11 +18,12 @@ struct GraphNetworkView: View {
    @State private var nodes:   [NodeEntry]   = Array<NodeEntry>()
    @State private var edges:   [EdgeEntry]   = Array<EdgeEntry>()
    @State private var scale: CGFloat = 1.0
+   @GestureState private var magnifyBy = 1.0
    @State private var anchor: UnitPoint = .zero // .topLeading
    @State private var currentOffset: CGSize = .zero
    @State private var tapLocation: CGPoint = .zero
    @State private var tagInfo: TagInfo?
-   @State private var factor: Double = 10.0     // Should match minFactor constant below
+   @State private var factor: Double = minFactor //10.0     // Should match minFactor constant in FactorCalculation
    
    internal var canvasSpaceName = "GraphNetworkViewCanvas"
    private var dragGraph: some Gesture {
@@ -32,8 +33,11 @@ struct GraphNetworkView: View {
    }
    private var magnification: some Gesture {
       MagnifyGesture()
-         .onChanged {value in scale = value.magnification}
-         .onEnded({value in scale = value.magnification})
+         .updating($magnifyBy) { value, gestureState, transaction in
+            gestureState = value.magnification
+            scale = value.magnification
+         }
+         .onEnded {value in scale = value.magnification}
    }
    private var revealDetails: some Gesture {
       SpatialTapGesture(count: 1, coordinateSpace: .named(canvasSpaceName))
@@ -105,8 +109,8 @@ struct GraphNetworkView: View {
                    let startAngle = Angle(degrees: 0)
                    let stopAngle = Angle(degrees: 360)
                    for node in nodes {
-                      let xpos = Double(node.xpos) * factor + midPoint
-                      let ypos = Double(node.ypos) * factor + midPoint
+                      let xpos = (Double(node.xpos) * factor) + midPoint
+                      let ypos = (Double(node.ypos) * factor) + midPoint
                       let center = CGPoint(x: xpos, y: ypos)
                       nodePath.addArc(center: center, radius: radius,
                                       startAngle: startAngle, endAngle: stopAngle,
@@ -125,12 +129,13 @@ struct GraphNetworkView: View {
                    scale = 1.0
                    currentOffset = .zero}
                 .gesture(magnification)
-                .scaleEffect(scale, anchor: anchor)
+                .scaleEffect(magnifyBy != 1.0 ? magnifyBy : scale, anchor: anchor)
                 .animation(.easeInOut, value: scale)
                 .gesture(revealDetails)
                 .onChange(of: tapLocation, initial: false) { oldstate, newstate in
                    tagInfo = findTagInfo(network: network, displaySize: geometry.size,
-                                         tapLocation: newstate, scale: scale, offset: currentOffset)
+                                         tapLocation: newstate, scale: scale,
+                                         magnifyBy: magnifyBy, offset: currentOffset)
                 }
                 .popover(item: $tagInfo,
                          attachmentAnchor: PopoverAttachmentAnchor.point(UnitPoint(x: tapLocation.x/geometry.size.width, y: tapLocation.y/geometry.size.height)),
@@ -143,13 +148,18 @@ struct GraphNetworkView: View {
                                   Text("\(info.nodeEntry?.ypos ?? -1)").accessibilityIdentifier("GraphNetworkViewPopupTagInfoYpos")
                                }
                                Text("Tap was (\(info.tapPostion.x),\(info.tapPostion.y)) adjusted to (\(info.adjustedTap.x), \(info.adjustedTap.y))")
+                                  .accessibilityIdentifier("GraphNetworkViewPopupTapInfo")
                                Text(" and Search was (\(info.srchPosition.x), \(info.srchPosition.y))")
+                                  .accessibilityIdentifier("GraphNetworkViewPopupSearchArgs")
                                Text("There were \(info.matches) matches.  The screen factor was \(info.screenFactor)")
-                               Text("Scale was \(info.scaleFactor) and offset was (width: \(info.offset.width), height: \(info.offset.height))")
+                                  .accessibilityIdentifier("GraphNetworkViewPopupSearchResult")
+                               Text("Scale \(info.scaleFactor), magnify \(info.magnifyFactor) and offset(width: \(info.offset.width), height: \(info.offset.height))")
+                                  .accessibilityIdentifier("GraphNetworkViewPopupAdjustInfo")
+                               Spacer()
                             }
-                })
+                } )
              }
-             // .coordinateSpace(.named(canvasSpaceName))
+             .coordinateSpace(.named(canvasSpaceName))
              NavigationLink("Network details",
                             destination: GraphNetworkDetailView(network: $network,
                                                                 islands: $islands,
@@ -184,6 +194,7 @@ struct TagInfo : Identifiable {
    let srchPosition: CGPoint
    let screenFactor: CGFloat
    let scaleFactor: CGFloat
+   let magnifyFactor: CGFloat
    let offset: CGSize
    let tag: Tag
    let nodeEntry: NodeEntry?
@@ -191,7 +202,7 @@ struct TagInfo : Identifiable {
 }
 
 func findTagInfo(network: TagNetwork, displaySize: CGSize, tapLocation: CGPoint,
-                 scale: CGFloat, offset: CGSize) -> TagInfo? {
+                 scale: CGFloat, magnifyBy: CGFloat, offset: CGSize) -> TagInfo? {
    let factor = calcFactor(network: network, displaySize: displaySize)
    let adjustedTap = CGPoint(x: (tapLocation.x / scale) - offset.width, y: (tapLocation.y / scale) - offset.height)
    let srchX = (adjustedTap.x / factor) - 0.5
@@ -221,7 +232,8 @@ func findTagInfo(network: TagNetwork, displaySize: CGSize, tapLocation: CGPoint,
                      adjustedTap: adjustedTap,
                      srchPosition: CGPoint(x: srchX, y: srchY),
                      screenFactor: factor,
-                     scaleFactor: scale, offset: offset, tag: info,
+                     scaleFactor: scale, magnifyFactor: magnifyBy,
+                     offset: offset, tag: info,
                      nodeEntry: nodeEntry, matches: matches)
    return tagInfo
 }

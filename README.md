@@ -79,3 +79,6 @@ for the correct behavior on all platforms.  It is not clear why this would be th
 A GeometryReader was used to wrap the Canvas so that the Canvas size information could be provided to some of the Canvas
 modifier definitions.  This results in the same information held by the parameter value for the GeometryReader closure
 and by the parameter value for the Canvas closure.  There should be a better way to do this.
+
+The pinch function of an XCUIElement does not produce a scale as small as 1.25.  It produced a scale of about 2.5, so
+the test where scaling via a pinch is performed makes that adjustment for the tap location.

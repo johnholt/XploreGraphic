@@ -27,6 +27,7 @@ struct TagListView: View {
             }
          }
       }
+      .accessibilityIdentifier("TagListScroll")
 #if os(macOS)        // bug: nav bar back button covered up by title
       .navigationBarBackButtonHidden(true)
       .toolbar {
@@ -58,6 +59,7 @@ struct ItemListView: View {
             }
          }
       }
+      .accessibilityIdentifier("ItemListScroll")
       #if os(macOS)        // bug: nav bar back button covered up by title
       .navigationBarBackButtonHidden(true)
       .toolbar {
